@@ -1,0 +1,1 @@
+ALTER TABLE "npcs" ALTER COLUMN "map_id" DROP NOT NULL;

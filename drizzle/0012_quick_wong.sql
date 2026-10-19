@@ -1,0 +1,1 @@
+ALTER TABLE "players" ADD COLUMN "fortune_expires_at" text;

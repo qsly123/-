@@ -1,0 +1,1039 @@
+export const GAME_SERVER_PROTOCOL_VERSION = 1;
+
+export const GAME_ROOM_NAMES = {
+  worldMap: "world_map",
+  secretRealm: "secret_realm",
+  combat: "combat",
+  boss: "boss",
+  pvp: "pvp",
+  social: "social",
+} as const;
+
+export type GameRoomName = (typeof GAME_ROOM_NAMES)[keyof typeof GAME_ROOM_NAMES];
+
+export const WORLD_MAP_SECTOR_SIZE = 16;
+export const WORLD_MAP_AOI_RADIUS = 1;
+export const WORLD_MAP_TARGET_CLIENTS_PER_ROOM = 80;
+export const WORLD_MAP_HARD_MAX_CLIENTS_PER_ROOM = 100;
+export const WORLD_MAP_DEFAULT_SHARD_ID = "0";
+export const WORLD_MAP_GRID_TILE_SIZE_PX = 48;
+
+export interface MapGridCoordinate {
+  x: number;
+  y: number;
+}
+
+export interface MapPixelCoordinate {
+  x: number;
+  y: number;
+}
+
+export interface MapPhaserCoordinate {
+  x: number;
+  y: number;
+}
+
+export function normalizeWorldMapShardId(value: unknown) {
+  const normalized = String(value || "").trim();
+  return normalized || WORLD_MAP_DEFAULT_SHARD_ID;
+}
+
+export function createWorldMapRoomKey(params: {
+  mapId: string;
+  shardId?: string | null;
+}) {
+  return `${String(params.mapId || "default").trim() || "default"}:${normalizeWorldMapShardId(params.shardId)}`;
+}
+
+export function normalizeMapGridCoordinate(value: unknown) {
+  const numberValue = Number(value);
+  if (!Number.isSafeInteger(numberValue)) {
+    return 0;
+  }
+  return Math.max(0, numberValue);
+}
+
+export function clampMapGridCoordinate(params: {
+  x: unknown;
+  y: unknown;
+  width: number;
+  height: number;
+}): MapGridCoordinate {
+  const width = Math.max(1, Math.floor(params.width || 1));
+  const height = Math.max(1, Math.floor(params.height || 1));
+  return {
+    x: Math.max(0, Math.min(width - 1, normalizeMapGridCoordinate(params.x))),
+    y: Math.max(0, Math.min(height - 1, normalizeMapGridCoordinate(params.y))),
+  };
+}
+
+export function mapGridToPixelCoordinate(
+  coordinate: MapGridCoordinate,
+  tileSizePx = WORLD_MAP_GRID_TILE_SIZE_PX,
+): MapPixelCoordinate {
+  return {
+    x: coordinate.x * tileSizePx,
+    y: coordinate.y * tileSizePx,
+  };
+}
+
+export function mapPixelToGridCoordinate(
+  coordinate: MapPixelCoordinate,
+  tileSizePx = WORLD_MAP_GRID_TILE_SIZE_PX,
+): MapGridCoordinate {
+  return {
+    x: normalizeMapGridCoordinate(Math.floor(coordinate.x / tileSizePx)),
+    y: normalizeMapGridCoordinate(Math.floor(coordinate.y / tileSizePx)),
+  };
+}
+
+export function mapGridToPhaserCoordinate(
+  coordinate: MapGridCoordinate,
+  tileSizePx = WORLD_MAP_GRID_TILE_SIZE_PX,
+): MapPhaserCoordinate {
+  return {
+    x: coordinate.x * tileSizePx + tileSizePx / 2,
+    y: coordinate.y * tileSizePx + tileSizePx / 2,
+  };
+}
+
+export function mapPhaserToGridCoordinate(
+  coordinate: MapPhaserCoordinate,
+  tileSizePx = WORLD_MAP_GRID_TILE_SIZE_PX,
+): MapGridCoordinate {
+  return {
+    x: normalizeMapGridCoordinate(Math.floor(coordinate.x / tileSizePx)),
+    y: normalizeMapGridCoordinate(Math.floor(coordinate.y / tileSizePx)),
+  };
+}
+
+export const REALTIME_INPUT_TYPES = [
+  "move",
+  "interact",
+  "travel",
+  "repair",
+  "command",
+  "movement",
+  "useItem",
+  "surrender",
+  "nearbyMessage",
+  "partyInvite",
+  "partyCommand",
+] as const;
+
+export type RealtimeInputType = (typeof REALTIME_INPUT_TYPES)[number];
+
+export const REALTIME_OUTPUT_TYPES = [
+  "scene_snapshot",
+  "sector_snapshot",
+  "sector_delta",
+  "entity_enter",
+  "entity_leave",
+  "correction",
+  "timeline_event",
+  "damage_event",
+  "state_correction",
+  "settlement",
+  "repair",
+  "social_snapshot",
+  "social_event",
+  // 状态变更强制推送帧：资产 / 背包 / 进度入库变更后必须下发，不允许只回 ACK。
+  "inventory_snapshot",
+  "inventory_refresh",
+  "asset_snapshot",
+  "asset_refresh",
+  "progress_snapshot",
+  "progress_refresh",
+  "error",
+] as const;
+
+export type RealtimeOutputType = (typeof REALTIME_OUTPUT_TYPES)[number];
+
+export interface RealtimeClientInput<
+  TPayload = unknown,
+  TInputType extends RealtimeInputType = RealtimeInputType,
+> {
+  clientSequence: number;
+  clientSceneTick: number;
+  actionId: string;
+  clientSentAt: number;
+  inputType: TInputType;
+  payload: TPayload;
+}
+
+export interface MapMovePayload {
+  x: number;
+  y: number;
+  fromX?: number;
+  fromY?: number;
+}
+
+export interface MapInteractPayload {
+  entityId: string;
+  interactionType?: string;
+  eventId?: string;
+  sessionId?: string;
+  choiceId?: string;
+}
+
+export interface MapTravelPayload {
+  targetMapId: string;
+  portalId?: string;
+}
+
+export const REALTIME_REPAIR_TRIGGERS = [
+  "manual",
+  "delta_gap",
+  "reconnect",
+  "weak_network_timeout",
+  "foreground_restore",
+  "visibility_restore",
+  "initial_join",
+  "server_request",
+] as const;
+
+export type RealtimeRepairTrigger = (typeof REALTIME_REPAIR_TRIGGERS)[number];
+
+export interface RealtimeRepairPayload {
+  trigger: RealtimeRepairTrigger;
+  reason?: string;
+  lastServerTick?: number;
+  lastSnapshotVersion?: number;
+  lastAcceptedSequence?: number;
+}
+
+export type MapRealtimeInput =
+  | RealtimeClientInput<MapMovePayload, "move">
+  | RealtimeClientInput<MapInteractPayload, "interact">
+  | RealtimeClientInput<MapTravelPayload, "travel">
+  | RealtimeClientInput<RealtimeRepairPayload, "repair">;
+
+export interface CombatCommandPayload {
+  commandType: "basicAttack" | "skill" | "item" | "flee" | "surrender" | "repair" | "ready" | "timeoutAdvance";
+  targetId?: string;
+  skillId?: string;
+  itemId?: string;
+  timeoutAdvance?: boolean;
+}
+
+export interface CombatMovementPayload {
+  x?: number;
+  y?: number;
+  targetXPercent?: number;
+  targetYPercent?: number;
+}
+
+export type CombatRealtimeInput =
+  | RealtimeClientInput<CombatCommandPayload, "command">
+  | RealtimeClientInput<CombatMovementPayload, "movement">
+  | RealtimeClientInput<{ itemId: string; targetId?: string }, "useItem">
+  | RealtimeClientInput<Record<string, never>, "surrender">
+  | RealtimeClientInput<RealtimeRepairPayload, "repair">;
+
+export type SocialRealtimeInput =
+  | RealtimeClientInput<{ message: string }, "nearbyMessage">
+  | RealtimeClientInput<{ targetPlayerId: string; partyId?: string }, "partyInvite">
+  | RealtimeClientInput<{ command: "accept" | "reject" | "leave" | "kick"; targetPlayerId?: string }, "partyCommand">;
+
+export interface RealtimeServerEnvelope<TState = unknown, TEvent = unknown> {
+  type: RealtimeOutputType;
+  serverTick: number;
+  roomId: string;
+  snapshotVersion: number;
+  acceptedSequence: number | null;
+  authoritativeState: TState;
+  events: TEvent[];
+}
+
+export type WorldMapAoiEntityKind =
+  | "player"
+  | "npc"
+  | "monster"
+  | "opportunity"
+  | "limited_opportunity"
+  | "portal"
+  | "event_portal"
+  | "secret_realm"
+  | "reputation_event"
+  | "world_commission"
+  | "sect_home"
+  | "sect_activity"
+  | "temporary_blocker"
+  | "sealed_area"
+  | string;
+
+export interface WorldMapAoiEntity {
+  id: string;
+  kind: WorldMapAoiEntityKind;
+  name: string;
+  x: number;
+  y: number;
+  velocityX: number;
+  velocityY: number;
+  updatedAt: number;
+  sectorKey: string;
+}
+
+export interface WorldMapSectorAuthoritativeState {
+  mapId: string;
+  shardId: string;
+  sectorSize: number;
+  subscribedSectorKeys: string[];
+  entities: WorldMapAoiEntity[];
+}
+
+export type WorldMapSectorEvent =
+  | { type: "entity_enter"; entity: WorldMapAoiEntity }
+  | { type: "entity_leave"; entityId: string }
+  | { type: "entity_update"; entity: WorldMapAoiEntity };
+
+export type WorldMapSectorEnvelope = RealtimeServerEnvelope<
+  WorldMapSectorAuthoritativeState,
+  WorldMapSectorEvent
+>;
+
+export interface CombatSceneEntity {
+  id: string;
+  kind: string;
+  name: string;
+  x: number;
+  y: number;
+  velocityX: number;
+  velocityY: number;
+  updatedAt: number;
+  role?: "player" | "enemy" | "boss" | string;
+  hp?: number;
+  maxHp?: number;
+  mp?: number;
+  maxMp?: number;
+  isCurrent?: boolean;
+}
+
+export interface CombatSceneAuthoritativeState {
+  mode: "solo" | "party" | "boss" | "pvp";
+  ruleset: unknown;
+  entities: CombatSceneEntity[];
+  timeoutDecision?: unknown;
+  reconnectingSessionIds?: string[];
+  runtimeSource?: "pending_combat" | "party_encounter" | "boss_instance" | "pvp_runtime" | "fallback";
+  state?: unknown;
+  sceneSnapshot?: unknown;
+  battleView?: unknown;
+  battleRuntime?: unknown;
+  skillsData?: unknown;
+  skillRotation?: string[];
+  turnState?: unknown;
+  settlement?: unknown;
+  inventoryItems?: unknown;
+  participants?: unknown;
+  claimState?: unknown;
+  matchContext?: unknown;
+}
+
+export type CombatSceneEvent =
+  | { type: "command_ack"; actorId: string; commandType: string; targetId: string | null }
+  | { type: "movement_ack"; actorId: string; x: number; y: number }
+  | { type: "repair"; actorId: string | null }
+  | { type: "timeline_event"; actorId: string; commandType: string; targetId: string | null; occurredAt: number }
+  | { type: "settlement_intent"; intent: unknown }
+  | { type: "settlement"; intent: unknown; persistence: unknown };
+
+export type CombatSceneEnvelope = RealtimeServerEnvelope<
+  CombatSceneAuthoritativeState,
+  CombatSceneEvent
+>;
+
+export interface SocialPresencePlayer {
+  sessionId: string;
+  playerId: string;
+  name: string;
+  mapId: string;
+  shardId: string;
+  partyId: string | null;
+  sectId: string | null;
+  joinedAt: number;
+  updatedAt: number;
+}
+
+export interface SocialPresenceAuthoritativeState {
+  self: SocialPresencePlayer | null;
+  mapId: string;
+  shardId: string;
+  nearbyPlayers: SocialPresencePlayer[];
+  partyMembers: SocialPresencePlayer[];
+  sectMembers: SocialPresencePlayer[];
+}
+
+export type SocialPresenceEvent =
+  | { type: "presence_join"; player: SocialPresencePlayer }
+  | { type: "presence_leave"; player: SocialPresencePlayer }
+  | { type: "nearby_message"; player: SocialPresencePlayer; message: string; sentAt: number }
+  | { type: "party_command_ack"; player: SocialPresencePlayer; command: string }
+  | { type: "repair"; player: SocialPresencePlayer | null };
+
+export type SocialPresenceEnvelope = RealtimeServerEnvelope<
+  SocialPresenceAuthoritativeState,
+  SocialPresenceEvent
+>;
+
+export type RealtimeAckInputType = RealtimeInputType | "unknown";
+
+export type RealtimeInputRejectReason =
+  | "invalid_input"
+  | "invalid_payload"
+  | "invalid_position"
+  | "entity_missing"
+  | "target_missing"
+  | "permission_denied"
+  | "already_processed"
+  | "stale_state"
+  | "unsupported_input"
+  | "out_of_bounds"
+  | "blocked"
+  | "too_far"
+  | "persist_failed"
+  | "missing_actor"
+  | "missing_target"
+  | "on_cooldown"
+  | "out_of_range"
+  | "settlement_pending";
+
+export interface RealtimeInputAck<TState = unknown> {
+  accepted: boolean;
+  inputType: RealtimeAckInputType;
+  acceptedSequence: number;
+  reason?: RealtimeInputRejectReason;
+  serverTick: number;
+  authoritativeState?: TState;
+}
+
+export interface RealtimeInputMetaOverrides {
+  clientSequence?: number;
+  clientSceneTick?: number;
+  actionId?: string;
+  clientSentAt?: number;
+}
+
+export interface RealtimeRouteProtocolMeta<TInput extends RealtimeClientInput = RealtimeClientInput> {
+  realtimeInput: TInput;
+  protocolVersion: typeof GAME_SERVER_PROTOCOL_VERSION;
+}
+
+export type LegacyRealtimeAdapterResult<TInput extends RealtimeClientInput> =
+  | {
+    ok: true;
+    input: TInput;
+    legacyBody: Record<string, unknown>;
+    protocolMeta: RealtimeRouteProtocolMeta<TInput>;
+  }
+  | {
+    ok: false;
+    status: number;
+    error: string;
+    ack: Omit<RealtimeInputAck, "serverTick">;
+  };
+
+export function createRealtimeClientInput<
+  TPayload,
+  TInputType extends RealtimeInputType,
+>(params: RealtimeInputMetaOverrides & {
+  inputType: TInputType;
+  payload: TPayload;
+}): RealtimeClientInput<TPayload, TInputType> {
+  return {
+    clientSequence: params.clientSequence ?? 0,
+    clientSceneTick: params.clientSceneTick ?? 0,
+    actionId: params.actionId ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    clientSentAt: params.clientSentAt ?? Date.now(),
+    inputType: params.inputType,
+    payload: params.payload,
+  };
+}
+
+const realtimeInputTypeSet = new Set<string>(REALTIME_INPUT_TYPES);
+
+function isSafeSequence(value: unknown) {
+  return Number.isSafeInteger(value) && Number(value) >= 0;
+}
+
+function isFiniteTick(value: unknown) {
+  return Number.isFinite(value) && Number(value) >= 0;
+}
+
+function readRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
+}
+
+function readString(value: unknown) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function readFiniteNumber(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
+function readPositiveSequence(value: unknown) {
+  return Number.isInteger(value) && Number(value) > 0 ? Number(value) : undefined;
+}
+
+function readNonNegativeSceneTick(value: unknown) {
+  return Number.isInteger(value) && Number(value) >= 0 ? Number(value) : undefined;
+}
+
+function createLegacyAdapterFailure(params: {
+  inputType?: RealtimeAckInputType;
+  acceptedSequence?: number;
+  status?: number;
+  error: string;
+  reason?: RealtimeInputRejectReason;
+}): LegacyRealtimeAdapterResult<RealtimeClientInput> {
+  return {
+    ok: false,
+    status: params.status || 400,
+    error: params.error,
+    ack: {
+      accepted: false,
+      inputType: params.inputType || "unknown",
+      acceptedSequence: params.acceptedSequence ?? -1,
+      reason: params.reason || "invalid_input",
+    },
+  };
+}
+
+function createProtocolMeta<TInput extends RealtimeClientInput>(input: TInput): RealtimeRouteProtocolMeta<TInput> {
+  return {
+    realtimeInput: input,
+    protocolVersion: GAME_SERVER_PROTOCOL_VERSION,
+  };
+}
+
+function buildClientInputFromLegacy<TPayload, TInputType extends RealtimeInputType>(params: {
+  body: Record<string, unknown>;
+  inputType: TInputType;
+  payload: TPayload;
+  requireSequence?: boolean;
+  requireSceneTick?: boolean;
+  defaultClientSequence?: number;
+  defaultClientSceneTick?: number;
+}): LegacyRealtimeAdapterResult<RealtimeClientInput<TPayload, TInputType>> {
+  const clientSequence = readPositiveSequence(params.body.clientSequence) ?? params.defaultClientSequence;
+  const clientSceneTick = readNonNegativeSceneTick(params.body.clientSceneTick) ?? params.defaultClientSceneTick;
+  const actionId = readString(params.body.actionId);
+  const clientSentAt = readFiniteNumber(params.body.clientSentAt);
+
+  if (params.requireSequence && typeof clientSequence !== "number") {
+    return createLegacyAdapterFailure({
+      inputType: params.inputType,
+      error: "缺少客户端动作序列，请刷新页面后重试",
+      reason: "invalid_input",
+    }) as LegacyRealtimeAdapterResult<RealtimeClientInput<TPayload, TInputType>>;
+  }
+
+  if (params.requireSceneTick && typeof clientSceneTick !== "number") {
+    return createLegacyAdapterFailure({
+      inputType: params.inputType,
+      acceptedSequence: clientSequence ?? -1,
+      error: "缺少场景同步帧序号，请等待同步后重试",
+      reason: "invalid_input",
+    }) as LegacyRealtimeAdapterResult<RealtimeClientInput<TPayload, TInputType>>;
+  }
+
+  const input = createRealtimeClientInput({
+    inputType: params.inputType,
+    payload: params.payload,
+    clientSequence: clientSequence ?? 0,
+    clientSceneTick: clientSceneTick ?? 0,
+    actionId: actionId || undefined,
+    clientSentAt,
+  });
+
+  return {
+    ok: true,
+    input,
+    legacyBody: {
+      ...params.body,
+      clientSequence: input.clientSequence,
+      clientSceneTick: input.clientSceneTick,
+      actionId: input.actionId,
+      clientSentAt: input.clientSentAt,
+    },
+    protocolMeta: createProtocolMeta(input),
+  };
+}
+
+export function isRealtimeInputType(value: unknown): value is RealtimeInputType {
+  return typeof value === "string" && realtimeInputTypeSet.has(value);
+}
+
+export function validateRealtimeClientInput(value: unknown): {
+  ok: true;
+  input: RealtimeClientInput;
+} | {
+  ok: false;
+  ack: Omit<RealtimeInputAck, "serverTick">;
+} {
+  if (!value || typeof value !== "object") {
+    return {
+      ok: false,
+      ack: {
+        accepted: false,
+        inputType: "unknown",
+        acceptedSequence: -1,
+        reason: "invalid_input",
+      },
+    };
+  }
+
+  const input = value as Partial<RealtimeClientInput>;
+  const inputType = isRealtimeInputType(input.inputType) ? input.inputType : "unknown";
+  const acceptedSequence = isSafeSequence(input.clientSequence) ? Number(input.clientSequence) : -1;
+
+  if (
+    inputType === "unknown"
+    || !isSafeSequence(input.clientSequence)
+    || !isFiniteTick(input.clientSceneTick)
+    || typeof input.actionId !== "string"
+    || input.actionId.trim().length < 1
+    || !Number.isFinite(input.clientSentAt)
+    || Number(input.clientSentAt) < 1
+    || !("payload" in input)
+  ) {
+    return {
+      ok: false,
+      ack: {
+        accepted: false,
+        inputType,
+        acceptedSequence,
+        reason: "invalid_input",
+      },
+    };
+  }
+
+  return {
+    ok: true,
+    input: {
+      clientSequence: Number(input.clientSequence),
+      clientSceneTick: Number(input.clientSceneTick),
+      actionId: input.actionId,
+      clientSentAt: Number(input.clientSentAt),
+      inputType,
+      payload: input.payload,
+    },
+  };
+}
+
+export function createRealtimeInputAck<TState = unknown>(params: {
+  accepted: boolean;
+  inputType: RealtimeAckInputType;
+  acceptedSequence: number;
+  serverTick: number;
+  reason?: RealtimeInputRejectReason;
+  authoritativeState?: TState;
+}): RealtimeInputAck<TState> {
+  return {
+    accepted: params.accepted,
+    inputType: params.inputType,
+    acceptedSequence: params.acceptedSequence,
+    reason: params.reason,
+    serverTick: params.serverTick,
+    authoritativeState: params.authoritativeState,
+  };
+}
+
+export function normalizeLegacyMapMoveRequest(value: unknown) {
+  const body = readRecord(value);
+  const envelope = validateRealtimeClientInput(body);
+  if (envelope.ok && envelope.input.inputType === "move") {
+    const payload = readRecord(envelope.input.payload);
+    const x = readFiniteNumber(payload.x);
+    const y = readFiniteNumber(payload.y);
+    if (typeof x !== "number" || typeof y !== "number") {
+      return createLegacyAdapterFailure({
+        inputType: "move",
+        acceptedSequence: envelope.input.clientSequence,
+        error: "移动坐标无效",
+        reason: "invalid_position",
+      }) as LegacyRealtimeAdapterResult<RealtimeClientInput<MapMovePayload, "move">>;
+    }
+    const input: RealtimeClientInput<MapMovePayload, "move"> = {
+      ...envelope.input,
+      inputType: "move",
+      payload: {
+        x,
+        y,
+        ...(typeof payload.fromX === "number" ? { fromX: payload.fromX } : {}),
+        ...(typeof payload.fromY === "number" ? { fromY: payload.fromY } : {}),
+      },
+    };
+    return {
+      ok: true,
+      input,
+      legacyBody: { ...body, ...input.payload, clientSequence: input.clientSequence, clientSceneTick: input.clientSceneTick, actionId: input.actionId, clientSentAt: input.clientSentAt },
+      protocolMeta: createProtocolMeta(input),
+    } satisfies LegacyRealtimeAdapterResult<RealtimeClientInput<MapMovePayload, "move">>;
+  }
+
+  const x = readFiniteNumber(body.x);
+  const y = readFiniteNumber(body.y);
+  if (typeof x !== "number" || typeof y !== "number") {
+    return createLegacyAdapterFailure({
+      inputType: "move",
+      acceptedSequence: readPositiveSequence(body.clientSequence) ?? -1,
+      error: "移动坐标无效",
+      reason: "invalid_position",
+    }) as LegacyRealtimeAdapterResult<RealtimeClientInput<MapMovePayload, "move">>;
+  }
+
+  return buildClientInputFromLegacy({
+    body,
+    inputType: "move",
+    payload: {
+      x,
+      y,
+      ...(typeof body.fromX === "number" ? { fromX: body.fromX } : {}),
+      ...(typeof body.fromY === "number" ? { fromY: body.fromY } : {}),
+    },
+    requireSequence: true,
+  });
+}
+
+export function normalizeLegacyMapInteractRequest(value: unknown, interactionType: string) {
+  const body = readRecord(value);
+  const eventId = readString(body.eventId);
+  const sessionId = readString(body.sessionId);
+  const choiceId = readString(body.choiceId);
+  const entityId = readString(body.entityId) || eventId || sessionId;
+
+  if (!entityId) {
+    return createLegacyAdapterFailure({
+      inputType: "interact",
+      error: "缺少交互目标",
+      reason: "target_missing",
+    }) as LegacyRealtimeAdapterResult<RealtimeClientInput<MapInteractPayload, "interact">>;
+  }
+
+  return buildClientInputFromLegacy({
+    body,
+    inputType: "interact",
+    payload: {
+      entityId,
+      interactionType,
+      ...(eventId ? { eventId } : {}),
+      ...(sessionId ? { sessionId } : {}),
+      ...(choiceId ? { choiceId } : {}),
+    },
+    defaultClientSequence: readPositiveSequence(body.clientSequence) ?? 0,
+    defaultClientSceneTick: readNonNegativeSceneTick(body.clientSceneTick) ?? 0,
+  });
+}
+
+export function normalizeLegacyMapTravelRequest(value: unknown) {
+  const body = readRecord(value);
+  const targetMapId = readString(body.targetMapId) || readString(body.mapId);
+  if (!targetMapId) {
+    return createLegacyAdapterFailure({
+      inputType: "travel",
+      error: "缺少目标地图",
+      reason: "target_missing",
+    }) as LegacyRealtimeAdapterResult<RealtimeClientInput<MapTravelPayload, "travel">>;
+  }
+
+  return buildClientInputFromLegacy({
+    body,
+    inputType: "travel",
+    payload: {
+      targetMapId,
+      ...(readString(body.portalId) ? { portalId: readString(body.portalId) } : {}),
+    },
+    defaultClientSequence: readPositiveSequence(body.clientSequence) ?? 0,
+    defaultClientSceneTick: readNonNegativeSceneTick(body.clientSceneTick) ?? 0,
+  });
+}
+
+export function normalizeLegacyCombatActionRequest(value: unknown) {
+  const body = readRecord(value);
+  const action = readString(body.action);
+  const inputType = action === "item" ? "useItem" : action === "surrender" ? "surrender" : "command";
+  const commandType = action === "flee" || action === "surrender" || action === "item" || action === "skill"
+    ? action
+    : "skill";
+  const payload = inputType === "useItem"
+    ? { itemId: readString(body.itemId), ...(readString(body.targetId) ? { targetId: readString(body.targetId) } : {}) }
+    : inputType === "surrender"
+      ? {}
+      : {
+        commandType,
+        ...(readString(body.skillId) ? { skillId: readString(body.skillId) } : {}),
+        ...(readString(body.itemId) ? { itemId: readString(body.itemId) } : {}),
+      };
+
+  return buildClientInputFromLegacy({
+    body,
+    inputType,
+    payload,
+    requireSequence: true,
+    requireSceneTick: true,
+  });
+}
+
+export function normalizeLegacyCombatMovementRequest(value: unknown) {
+  const body = readRecord(value);
+  return buildClientInputFromLegacy({
+    body,
+    inputType: "movement",
+    payload: {
+      ...(typeof body.x === "number" ? { x: body.x } : {}),
+      ...(typeof body.y === "number" ? { y: body.y } : {}),
+      ...(typeof body.targetXPercent === "number" ? { targetXPercent: body.targetXPercent } : {}),
+      ...(typeof body.targetYPercent === "number" ? { targetYPercent: body.targetYPercent } : {}),
+    },
+    requireSequence: true,
+    requireSceneTick: true,
+  });
+}
+
+export function normalizeLegacyCombatAdvanceRequest(value: unknown) {
+  const body = readRecord(value);
+  return buildClientInputFromLegacy({
+    body,
+    inputType: "command",
+    payload: {
+      commandType: "timeoutAdvance",
+      timeoutAdvance: true,
+    } satisfies CombatCommandPayload,
+    requireSequence: true,
+    requireSceneTick: true,
+  });
+}
+
+export function createRealtimeRepairPayload(params: {
+  trigger: RealtimeRepairTrigger;
+  reason?: string;
+  lastServerTick?: number;
+  lastSnapshotVersion?: number;
+  lastAcceptedSequence?: number;
+}): RealtimeRepairPayload {
+  return {
+    trigger: params.trigger,
+    ...(params.reason ? { reason: params.reason } : {}),
+    ...(typeof params.lastServerTick === "number" ? { lastServerTick: params.lastServerTick } : {}),
+    ...(typeof params.lastSnapshotVersion === "number" ? { lastSnapshotVersion: params.lastSnapshotVersion } : {}),
+    ...(typeof params.lastAcceptedSequence === "number" ? { lastAcceptedSequence: params.lastAcceptedSequence } : {}),
+  };
+}
+
+export function createRealtimeRepairInput(params: RealtimeInputMetaOverrides & {
+  trigger: RealtimeRepairTrigger;
+  reason?: string;
+  lastServerTick?: number;
+  lastSnapshotVersion?: number;
+  lastAcceptedSequence?: number;
+}) {
+  return createRealtimeClientInput({
+    inputType: "repair",
+    payload: createRealtimeRepairPayload(params),
+    clientSequence: params.clientSequence,
+    clientSceneTick: params.clientSceneTick,
+    actionId: params.actionId,
+    clientSentAt: params.clientSentAt,
+  });
+}
+
+export interface JoinRoomOptions {
+  sessionToken?: string;
+  playerId?: string;
+  mapId?: string;
+  shardId?: string;
+  combatId?: string;
+  partyId?: string;
+  sectId?: string;
+}
+
+export interface GameServerHealth {
+  ok: boolean;
+  service: "game-server";
+  protocolVersion: number;
+  processId: string;
+  uptimeSeconds: number;
+  rooms: readonly GameRoomName[];
+  roomInstancesTotal?: number;
+  roomInstancesTruncated?: boolean;
+  roomInstances?: Array<{
+    roomId: string;
+    roomKind: string;
+    mapId: string;
+    mapName: string;
+    mapRuntimeSource: string;
+    shardId: string;
+    combatId: string | null;
+    partyId: string | null;
+    createdAt: string;
+    updatedAt: string;
+    disposedAt: string | null;
+    clientCount: number;
+    peakClientCount: number;
+    entityCount: number;
+    inputMessages: number;
+    repairInputs: number;
+    moveAccepted: number;
+    moveRejected: number;
+    moveRejectedByReason: Record<string, number>;
+    reconnectLeaves: number;
+    reconnectSuccesses: number;
+    reconnectFailures: number;
+    reconnectSuccessRate: number;
+    realtimeRejected: number;
+    realtimeRejectedByReason: Record<string, number>;
+    persistFailures: number;
+    persistFailuresByReason: Record<string, number>;
+    socialMessages: number;
+    socialRejected: number;
+    socialRejectedByReason: Record<string, number>;
+    interactInputs: number;
+    travelInputs: number;
+    sectorSnapshotsSent: number;
+    sectorDeltasSent: number;
+    tickSamples: number;
+    tickAvgMs: number;
+    tickMaxMs: number;
+    status: "active" | "disposed";
+  }>;
+  processes?: Array<{
+    processId: string;
+    uptimeSeconds: number;
+    roomInstancesTotal: number;
+    roomInstancesTruncated: boolean;
+    metrics?: {
+      roomsCreated: number;
+      onlineConnections: number;
+      peakOnlineConnections: number;
+      joins: number;
+      leaves: number;
+      reconnectLeaves: number;
+      reconnectSuccesses: number;
+      reconnectFailures: number;
+      reconnectSuccessRate: number;
+      inputMessages: number;
+      repairInputs: number;
+      moveAccepted: number;
+      moveRejected: number;
+      moveRejectedByReason: Record<string, number>;
+      realtimeRejected: number;
+      realtimeRejectedByReason: Record<string, number>;
+      persistFailures: number;
+      persistFailuresByReason: Record<string, number>;
+      socialMessages: number;
+      socialRejected: number;
+      socialRejectedByReason: Record<string, number>;
+      interactInputs: number;
+      travelInputs: number;
+      sectorSnapshotsSent: number;
+      sectorDeltasSent: number;
+      tickSamples: number;
+      tickAvgMs: number;
+      tickMaxMs: number;
+      websocketUpgradeRequests: number;
+      websocketConnections: number;
+      websocketConnectionErrors: number;
+      websocketClientErrors: number;
+      websocketHeartbeatTerminations: number;
+      websocketHandshakeTimeouts: number;
+      websocketMissingSessionAndRoom: number;
+      websocketFailedReconnects: number;
+      websocketRoomConnectFailures: number;
+      websocketErrorByReason: Record<string, number>;
+    };
+    roomInstances?: Array<{
+      roomId: string;
+      roomKind: string;
+      mapId: string;
+      mapName: string;
+      mapRuntimeSource: string;
+      shardId: string;
+      combatId: string | null;
+      partyId: string | null;
+      createdAt: string;
+      updatedAt: string;
+      disposedAt: string | null;
+      clientCount: number;
+      peakClientCount: number;
+      entityCount: number;
+      inputMessages: number;
+      repairInputs: number;
+      moveAccepted: number;
+      moveRejected: number;
+      moveRejectedByReason: Record<string, number>;
+      reconnectLeaves: number;
+      reconnectSuccesses: number;
+      reconnectFailures: number;
+      reconnectSuccessRate: number;
+      realtimeRejected: number;
+      realtimeRejectedByReason: Record<string, number>;
+      persistFailures: number;
+      persistFailuresByReason: Record<string, number>;
+      socialMessages: number;
+      socialRejected: number;
+      socialRejectedByReason: Record<string, number>;
+      interactInputs: number;
+      travelInputs: number;
+      sectorSnapshotsSent: number;
+      sectorDeltasSent: number;
+      tickSamples: number;
+      tickAvgMs: number;
+      tickMaxMs: number;
+      status: "active" | "disposed";
+    }>;
+  }>;
+  redisEnabled: boolean;
+  redis?: {
+    enabled: boolean;
+    status: "disabled" | "ok" | "error";
+    latencyMs: number | null;
+    checkedAt: string | null;
+    error?: string;
+  };
+  metrics?: {
+    roomsCreated: number;
+    onlineConnections: number;
+    peakOnlineConnections: number;
+    joins: number;
+    leaves: number;
+    reconnectLeaves: number;
+    reconnectSuccesses: number;
+    reconnectFailures: number;
+    reconnectSuccessRate: number;
+    inputMessages: number;
+    repairInputs: number;
+    moveAccepted: number;
+    moveRejected: number;
+    moveRejectedByReason: Record<string, number>;
+    realtimeRejected: number;
+    realtimeRejectedByReason: Record<string, number>;
+    persistFailures: number;
+    persistFailuresByReason: Record<string, number>;
+    socialMessages: number;
+    socialRejected: number;
+    socialRejectedByReason: Record<string, number>;
+    interactInputs: number;
+    travelInputs: number;
+    sectorSnapshotsSent: number;
+    sectorDeltasSent: number;
+    tickSamples: number;
+    tickAvgMs: number;
+    tickMaxMs: number;
+    websocketUpgradeRequests: number;
+    websocketConnections: number;
+    websocketConnectionErrors: number;
+    websocketClientErrors: number;
+    websocketHeartbeatTerminations: number;
+    websocketHandshakeTimeouts: number;
+    websocketMissingSessionAndRoom: number;
+    websocketFailedReconnects: number;
+    websocketRoomConnectFailures: number;
+    websocketErrorByReason: Record<string, number>;
+  };
+}
+
+export * from "./opcode";

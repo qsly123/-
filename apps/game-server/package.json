@@ -1,0 +1,31 @@
+{
+  "name": "@immortality/game-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun run src/index.ts",
+    "start": "bun run src/index.ts",
+    "smoke": "bun run src/smoke.ts",
+    "smoke:redis-failure": "bun run src/smoke-redis-failure.ts",
+    "smoke:redis-multi": "bun run src/smoke-redis-multi-instance.ts",
+    "load:basic": "bun run src/load-basic.ts",
+    "load:map-shards": "bun run src/load-map-shards.ts",
+    "load:map-move": "bun run src/load-map-move.ts",
+    "load:repair": "bun run src/load-repair.ts",
+    "load:reconnect": "bun run src/load-reconnect.ts",
+    "load:combat-command": "bun run src/load-combat-command.ts",
+    "load:boss-command": "bun run src/load-boss-command.ts",
+    "load:pvp-command": "bun run src/load-pvp-command.ts",
+    "load:settlement-intent": "bun run src/load-settlement-intent.ts",
+    "bot:sect-presence": "bun run src/bot/system-c-sect-presence.ts",
+    "load:stage10-local": "bun run src/load-stage10-local.ts",
+    "load:stage10-scale-local": "bun run src/load-stage10-scale-local.ts",
+    "bot:nearby-chat": "bun run src/bot/system-b-nearby-chat.ts"
+  },
+  "dependencies": {
+    "@immortality/db": "workspace:*",
+    "@immortality/game-rules": "workspace:*",
+    "@immortality/shared-protocol": "workspace:*"
+  }
+}

@@ -1,0 +1,19 @@
+$ eslint
+
+D:\Immortality-main\scripts\audit-state-refresh-push.ts
+  38:10  warning  'addWarn' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\Immortality-main\src\modules\combat\ui\hooks\useCombatSceneController.ts
+  1197:5  error  React Hook "useForegroundRepairTrigger" cannot be called inside a callback. React Hooks must be called in a React function component or a custom React Hook function  react-hooks/rules-of-hooks
+
+D:\Immortality-main\src\modules\combat\ui\hooks\usePvpBattleSceneController.ts
+  267:5  error  React Hook "useForegroundRepairTrigger" cannot be called inside a callback. React Hooks must be called in a React function component or a custom React Hook function  react-hooks/rules-of-hooks
+
+D:\Immortality-main\src\modules\sect\ui\pages\game\sect\page.tsx
+  385:6  warning  React Hook useCallback has an unnecessary dependency: 'refreshAll'. Either exclude it or remove the dependency array  react-hooks/exhaustive-deps
+  400:6  warning  React Hook useCallback has an unnecessary dependency: 'refreshAll'. Either exclude it or remove the dependency array  react-hooks/exhaustive-deps
+  412:6  warning  React Hook useCallback has an unnecessary dependency: 'refreshAll'. Either exclude it or remove the dependency array  react-hooks/exhaustive-deps
+
+✖ 6 problems (2 errors, 4 warnings)
+
+error: script "lint" exited with code 1

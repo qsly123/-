@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Immortality Android Shell</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+        background: #0d0d0f;
+        color: #f3ead0;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background:
+          radial-gradient(circle at top, rgba(201, 168, 76, 0.2), transparent 42%),
+          linear-gradient(180deg, #16161c 0%, #0d0d0f 100%);
+      }
+
+      main {
+        width: min(90vw, 420px);
+        padding: 24px;
+        border-radius: 16px;
+        border: 1px solid rgba(201, 168, 76, 0.22);
+        background: rgba(15, 15, 20, 0.92);
+        box-shadow: 0 18px 48px rgba(0, 0, 0, 0.35);
+      }
+
+      h1 {
+        margin: 0 0 12px;
+        font-size: 22px;
+      }
+
+      p {
+        margin: 0 0 10px;
+        line-height: 1.6;
+        color: rgba(243, 234, 208, 0.84);
+      }
+
+      code {
+        color: #e8d282;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>安卓壳已就绪</h1>
+      <p>当前还没有配置远程游戏地址。</p>
+      <p>请在打包前设置环境变量 <code>CAPACITOR_SERVER_URL</code>，然后执行 <code>bun run cap:sync</code>。</p>
+      <p>示例：<code>https://your-game.example.com</code></p>
+    </main>
+  </body>
+</html>

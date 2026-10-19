@@ -1,0 +1,1 @@
+ALTER TABLE "random_events" ADD COLUMN "map_ids" jsonb;

@@ -1,0 +1,440 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1771076955762,
+      "tag": "0000_ambiguous_cloak",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1771077752810,
+      "tag": "0001_moaning_blockbuster",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1771151870122,
+      "tag": "0002_mighty_gunslinger",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1771153056332,
+      "tag": "0003_slimy_peter_parker",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1771156161756,
+      "tag": "0004_eager_killraven",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1771157767754,
+      "tag": "0005_wandering_ikaris",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1771165107879,
+      "tag": "0006_careful_energizer",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1771194600000,
+      "tag": "0007_worried_sleeper",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1771235063121,
+      "tag": "0008_needy_manta",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1771250566737,
+      "tag": "0009_left_golden_guardian",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1771310220857,
+      "tag": "0010_petite_squirrel_girl",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1771312905459,
+      "tag": "0011_condemned_susan_delgado",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1771314262947,
+      "tag": "0012_quick_wong",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1771324387389,
+      "tag": "0013_hot_wolverine",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1771372773755,
+      "tag": "0014_swift_harpoon",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1771374081464,
+      "tag": "0015_remarkable_smiling_tiger",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1771677361477,
+      "tag": "0016_moaning_shiva",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1771743203486,
+      "tag": "0017_yummy_donald_blake",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1771939133772,
+      "tag": "0018_silent_blue_blade",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1771989246661,
+      "tag": "0019_tidy_garia",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1772003145153,
+      "tag": "0020_hard_selene",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1772012926939,
+      "tag": "0021_thin_true_believers",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1772085410346,
+      "tag": "0022_goofy_wraith",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1772098023988,
+      "tag": "0023_known_bushwacker",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1772161719746,
+      "tag": "0024_opposite_klaw",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1772167650723,
+      "tag": "0025_unique_hairball",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1772250000000,
+      "tag": "0026_glossy_realm_crud",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1772250339074,
+      "tag": "0027_worthless_killer_shrike",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1772251100535,
+      "tag": "0028_round_steel_serpent",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1772254129979,
+      "tag": "0029_past_black_queen",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1772294400000,
+      "tag": "0030_runtime_plugin_kernel",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1772337600000,
+      "tag": "0031_drop_double_cultivation_core",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1772514931000,
+      "tag": "0032_player_combat_settings",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1772592000000,
+      "tag": "0033_hidden_fortune_flag",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1772596800000,
+      "tag": "0034_dongfu_claim_anchor",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1773117000000,
+      "tag": "0036_hongmeng_treasure_backfill",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1773122400000,
+      "tag": "0037_artifact_slots",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1773129600000,
+      "tag": "0038_temporary_cosmetic_grants",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1773132576995,
+      "tag": "0039_combat_stat_overhaul",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1773206400000,
+      "tag": "0040_realm_major_spiritual_sense",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1773209700000,
+      "tag": "0041_players_cultivation_xp_bigint",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1773219600000,
+      "tag": "0042_party_group_encounters",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1773309600000,
+      "tag": "0043_monster_ai_patrol",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1773313200000,
+      "tag": "0044_monster_runtime_positions",
+      "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1773396000000,
+      "tag": "0046_secret_realm_system",
+      "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1773410400000,
+      "tag": "0047_player_statuses",
+      "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1773496800000,
+      "tag": "0048_secret_realm_temporary_runtime",
+      "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1773583200000,
+      "tag": "0049_player_hidden_combat_stats",
+      "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1773673200000,
+      "tag": "0050_secret_realm_runtime_fk_cleanup",
+      "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1773675600000,
+      "tag": "0051_monster_basic_attack_seed",
+      "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1773705600000,
+      "tag": "0052_skill_basic_attack_visual_effect",
+      "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1773763200000,
+      "tag": "0054_random_events_map_types",
+      "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1773788400000,
+      "tag": "0055_wild_wolf_valley_hongmeng_bottle",
+      "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1773859200000,
+      "tag": "0056_server_hot_path_indexes",
+      "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1773918900000,
+      "tag": "0057_ai_npc_rumor_chain_encounters",
+      "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1773936000000,
+      "tag": "0058_open_world_tiandao",
+      "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1773943200000,
+      "tag": "0059_open_world_nearby_district_scope",
+      "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1773946800000,
+      "tag": "0060_open_world_ai_meta",
+      "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1774000800000,
+      "tag": "0061_market_listing_visibility_and_expiry",
+      "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1774015200000,
+      "tag": "0062_player_world_pressure_and_offers",
+      "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1774022400000,
+      "tag": "0068_sect_create_min_realm_fix",
+      "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1774108800000,
+      "tag": "0069_sect_empty_cleanup_support",
+      "breakpoints": true
+    }
+  ]
+}

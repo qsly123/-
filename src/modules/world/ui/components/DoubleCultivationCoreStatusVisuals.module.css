@@ -1,0 +1,446 @@
+.stack {
+  display: grid;
+  gap: 12px;
+}
+
+.shell {
+  border-radius: 16px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at top, rgba(255, 193, 215, 0.22), transparent 34%),
+    linear-gradient(180deg, rgba(56, 18, 33, 0.96), rgba(26, 8, 16, 0.98));
+  border: 1px solid rgba(255, 175, 204, 0.22);
+  box-shadow: 0 14px 40px rgba(21, 5, 12, 0.28);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffe7ef;
+}
+
+.subtitle {
+  margin-top: 4px;
+  font-size: 12px;
+  color: rgba(255, 225, 235, 0.72);
+}
+
+.tagRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.panel {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  margin-top: 14px;
+}
+
+.visualFrame {
+  position: relative;
+  min-height: 188px;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 192, 214, 0.18);
+  background:
+    radial-gradient(circle at 50% 22%, rgba(255, 255, 255, 0.12), transparent 28%),
+    linear-gradient(180deg, rgba(48, 14, 28, 0.98), rgba(15, 5, 11, 1));
+}
+
+.assetImageWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 188px;
+  padding: 10px;
+}
+
+.assetImage {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: auto;
+  max-width: 220px;
+  object-fit: contain;
+}
+
+.overlayBadge {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  z-index: 3;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(20, 7, 12, 0.72);
+  border: 1px solid rgba(255, 205, 222, 0.18);
+  color: #fff0f6;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.spermLiquidBackdrop {
+  position: absolute;
+  left: 50%;
+  top: 20px;
+  bottom: 24px;
+  width: 84px;
+  transform: translateX(-50%);
+  overflow: hidden;
+  border-radius: 30px 30px 18px 18px;
+  z-index: 1;
+}
+
+.spermLiquidFill {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  bottom: 0;
+  border-radius: 24px 24px 14px 14px;
+  background:
+    linear-gradient(180deg, rgba(255, 252, 246, 0.96), rgba(255, 221, 182, 0.96) 38%, rgba(255, 177, 120, 0.96));
+  box-shadow:
+    inset 0 0 12px rgba(255, 255, 255, 0.28),
+    0 0 24px rgba(255, 212, 170, 0.34);
+  transition: height 360ms ease;
+}
+
+.spermTube {
+  position: absolute;
+  left: 50%;
+  top: 14px;
+  width: 86px;
+  height: 154px;
+  transform: translateX(-50%);
+  border-radius: 28px 28px 20px 20px;
+  border: 2px solid rgba(255, 218, 230, 0.4);
+  background: linear-gradient(180deg, rgba(255, 248, 251, 0.1), rgba(255, 255, 255, 0.02));
+  box-shadow:
+    inset 0 0 18px rgba(255, 255, 255, 0.04),
+    0 14px 34px rgba(9, 2, 6, 0.26);
+}
+
+.spermCap {
+  position: absolute;
+  left: 50%;
+  top: 6px;
+  width: 56px;
+  height: 16px;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255, 224, 235, 0.72), rgba(194, 109, 145, 0.82));
+  box-shadow: 0 4px 14px rgba(184, 82, 122, 0.3);
+}
+
+.spermFillWrap {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  top: 16px;
+  overflow: hidden;
+  border-radius: 20px 20px 14px 14px;
+}
+
+.spermFill {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background:
+    linear-gradient(180deg, rgba(255, 252, 246, 0.96), rgba(255, 221, 182, 0.96) 38%, rgba(255, 177, 120, 0.96));
+  box-shadow:
+    inset 0 0 12px rgba(255, 255, 255, 0.28),
+    0 0 24px rgba(255, 212, 170, 0.34);
+  transition: height 360ms ease;
+}
+
+.spermShine {
+  position: absolute;
+  right: 14px;
+  top: 20px;
+  width: 10px;
+  height: 120px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0));
+  opacity: 0.56;
+}
+
+.spermAura {
+  position: absolute;
+  inset: auto 22px 18px;
+  height: 36px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(255, 207, 152, 0.3), rgba(255, 207, 152, 0));
+  filter: blur(8px);
+}
+
+.metricList {
+  display: grid;
+  gap: 10px;
+}
+
+.metric {
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(255, 229, 239, 0.05);
+  border: 1px solid rgba(255, 208, 224, 0.12);
+}
+
+.metricLabel {
+  font-size: 11px;
+  color: rgba(255, 220, 230, 0.62);
+}
+
+.metricValue {
+  margin-top: 4px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff0f6;
+}
+
+.meter {
+  margin-top: 12px;
+}
+
+.meterHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+  font-size: 11px;
+  color: rgba(255, 228, 236, 0.72);
+}
+
+.meterTrack {
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 233, 240, 0.1);
+}
+
+.meterFill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #ffd6e5, #ff96bb 56%, #f5618e);
+  transition: width 360ms ease;
+}
+
+.bonusRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.bonusChip {
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(255, 205, 222, 0.08);
+  border: 1px solid rgba(255, 208, 224, 0.12);
+  font-size: 11px;
+  color: rgba(255, 233, 240, 0.88);
+}
+
+.uterusScene {
+  position: relative;
+  height: 188px;
+}
+
+.uterusGlow {
+  position: absolute;
+  left: 50%;
+  bottom: 24px;
+  width: 136px;
+  height: 54px;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(255, 124, 171, 0.32), rgba(255, 124, 171, 0));
+  filter: blur(10px);
+}
+
+.uterusNode {
+  position: absolute;
+  top: 28px;
+  width: 72px;
+  height: 86px;
+  border: 2px solid rgba(255, 194, 215, 0.38);
+  background: linear-gradient(180deg, rgba(255, 215, 228, 0.14), rgba(255, 150, 191, 0.06));
+  box-shadow: inset 0 0 18px rgba(255, 255, 255, 0.04);
+}
+
+.uterusNodeLeft {
+  left: 26px;
+  border-radius: 58% 42% 46% 54% / 56% 38% 62% 44%;
+  transform: rotate(-8deg);
+}
+
+.uterusNodeRight {
+  right: 26px;
+  border-radius: 42% 58% 54% 46% / 38% 56% 44% 62%;
+  transform: rotate(8deg);
+}
+
+.uterusCenter {
+  position: absolute;
+  left: 50%;
+  top: 58px;
+  width: 94px;
+  height: 102px;
+  transform: translateX(-50%);
+  overflow: hidden;
+  border-radius: 44px 44px 52px 52px;
+  border: 2px solid rgba(255, 198, 218, 0.45);
+  background: linear-gradient(180deg, rgba(255, 241, 246, 0.08), rgba(255, 255, 255, 0.02));
+  box-shadow:
+    inset 0 0 22px rgba(255, 255, 255, 0.06),
+    0 14px 30px rgba(13, 4, 9, 0.26);
+}
+
+.uterusFluid {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
+  border-radius: 26px 26px 34px 34px;
+  background:
+    linear-gradient(180deg, rgba(255, 252, 254, 0.9), rgba(255, 202, 224, 0.88) 38%, rgba(255, 118, 168, 0.9));
+  box-shadow:
+    inset 0 0 14px rgba(255, 255, 255, 0.24),
+    0 0 26px rgba(255, 171, 201, 0.24);
+  transition: height 360ms ease;
+}
+
+.uterusFluidCore {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  top: 16px;
+  height: 30px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.36);
+  filter: blur(6px);
+  opacity: 0.78;
+}
+
+.uterusStem {
+  position: absolute;
+  left: 50%;
+  top: 26px;
+  width: 10px;
+  height: 36px;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255, 194, 214, 0.72), rgba(174, 74, 112, 0.9));
+}
+
+.uterusHint {
+  margin-top: 8px;
+  font-size: 12px;
+  color: rgba(255, 225, 235, 0.8);
+}
+
+.pregnancyShell {
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at top, rgba(255, 239, 205, 0.18), transparent 36%),
+    linear-gradient(180deg, rgba(63, 24, 32, 0.96), rgba(29, 10, 16, 0.98));
+  border: 1px solid rgba(255, 208, 151, 0.2);
+}
+
+.pregnancyBody {
+  display: grid;
+  grid-template-columns: 108px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.pregnancyIconWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 108px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(255, 244, 219, 0.12), rgba(255, 226, 182, 0.05));
+  border: 1px solid rgba(255, 223, 171, 0.16);
+}
+
+.pregnancyIcon {
+  width: 88px;
+  height: 88px;
+  object-fit: contain;
+}
+
+.pregnancyFallback {
+  width: 78px;
+  height: 78px;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 40% 35%, rgba(255, 255, 255, 0.86), rgba(255, 222, 165, 0.34) 42%, rgba(255, 167, 104, 0.18) 68%, rgba(255, 167, 104, 0));
+  box-shadow: 0 0 30px rgba(255, 201, 131, 0.22);
+}
+
+.pregnancyMeta {
+  display: grid;
+  gap: 10px;
+}
+
+.pregnancyStage {
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff5db;
+}
+
+.pregnancyDesc {
+  font-size: 12px;
+  color: rgba(255, 240, 210, 0.8);
+  line-height: 1.7;
+}
+
+.pregnancyEffects {
+  display: grid;
+  gap: 8px;
+}
+
+.pregnancyEffect {
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(255, 239, 215, 0.06);
+  border: 1px solid rgba(255, 223, 171, 0.12);
+  font-size: 12px;
+  color: rgba(255, 242, 218, 0.9);
+}
+
+@media (max-width: 640px) {
+  .panel {
+    grid-template-columns: 1fr;
+  }
+
+  .visualFrame {
+    min-height: 176px;
+  }
+
+  .assetImageWrap {
+    min-height: 176px;
+  }
+
+  .pregnancyBody {
+    grid-template-columns: 1fr;
+  }
+
+  .pregnancyIconWrap {
+    min-height: 96px;
+  }
+}

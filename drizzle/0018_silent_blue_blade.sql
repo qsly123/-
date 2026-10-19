@@ -1,0 +1,1 @@
+ALTER TABLE "fortunes" ADD COLUMN "gender" text;

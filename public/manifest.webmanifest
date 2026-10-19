@@ -1,0 +1,26 @@
+{
+  "name": "灵虚·长生录",
+  "short_name": "长生录",
+  "description": "修仙文字网页游戏 - 踏上修仙之路，问鼎长生大道",
+  "lang": "zh-CN",
+  "id": "/game/map",
+  "start_url": "/game/map",
+  "scope": "/game/",
+  "display": "standalone",
+  "display_override": ["standalone", "browser"],
+  "orientation": "portrait-primary",
+  "background_color": "#0d0d0f",
+  "theme_color": "#0d0d0f",
+  "icons": [
+    {
+      "src": "/pwa/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/pwa/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

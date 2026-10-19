@@ -1,0 +1,58 @@
+{
+  "scope": "mock inventory reads, real equipment provider + player snapshot + damage settlement",
+  "limitations": "不验证SQL过滤、真实数据库、其他provider、完整技能轮换或线上战斗",
+  "rows": [
+    {
+      "scenario": "裸装",
+      "attack": 100,
+      "damage": 100
+    },
+    {
+      "scenario": "25级武器无精炼",
+      "attack": 14008,
+      "bonusPercent": 5,
+      "damage": 14708,
+      "historicalFixture": {
+        "bonusPercent": 1288,
+        "damage": 194431
+      }
+    },
+    {
+      "scenario": "25级武器精炼10级",
+      "attack": 20962,
+      "damage": 22010
+    },
+    {
+      "scenario": "精炼10级+新旧增伤词条",
+      "bonusPercent": 7,
+      "damage": 22429
+    },
+    {
+      "scenario": "零基础词条与法宝区分",
+      "skillDamage": 102,
+      "artifactDamage": 111
+    },
+    {
+      "scenario": "精炼+攻击词条+灵根",
+      "attack": 25166.4
+    },
+    {
+      "scenario": "武器+护甲精炼10级",
+      "attack": 20962,
+      "maxHp": 106081,
+      "hp": 1000
+    },
+    {
+      "scenario": "零基础减伤词条",
+      "damageReductionPercent": 2,
+      "incomingDamage": 98,
+      "hpAfter": 902
+    },
+    {
+      "scenario": "护盾及致死结算",
+      "damage": 14708,
+      "hpAfter": 0,
+      "mpAfter": 0
+    }
+  ]
+}

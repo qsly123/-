@@ -1,0 +1,21 @@
+<svg width="320" height="320" viewBox="0 0 320 320" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="cap" x1="160" y1="18" x2="160" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFE5EE"/>
+      <stop offset="1" stop-color="#C56D91"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="160" y1="54" x2="160" y2="280" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF8FB" stop-opacity="0.42"/>
+      <stop offset="1" stop-color="#FFEAF1" stop-opacity="0.08"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(160 238) rotate(90) scale(78 112)">
+      <stop stop-color="#FFD4A8" stop-opacity="0.42"/>
+      <stop offset="1" stop-color="#FFD4A8" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="160" cy="246" rx="104" ry="46" fill="url(#glow)"/>
+  <rect x="110" y="22" width="100" height="26" rx="13" fill="url(#cap)"/>
+  <path d="M126 56C126 45.5066 134.507 37 145 37H175C185.493 37 194 45.5066 194 56V68C194 75.8071 198.168 82.9859 204.93 86.8321C221.224 96.0958 232 113.486 232 133V226C232 257.48 206.48 283 175 283H145C113.52 283 88 257.48 88 226V133C88 113.486 98.7764 96.0958 115.07 86.8321C121.832 82.9859 126 75.8071 126 68V56Z" fill="url(#glass)" stroke="#FFD3E2" stroke-width="6"/>
+  <path d="M208 74C208 74 247 97 247 149V224C247 273.153 207.153 313 158 313H162C112.847 313 73 273.153 73 224V149C73 97 112 74 112 74" stroke="#FFDCE8" stroke-opacity="0.16" stroke-width="4" stroke-linecap="round"/>
+  <path d="M194 88C207.333 93.6667 232.4 110.8 228 148" stroke="#FFFFFF" stroke-opacity="0.42" stroke-width="8" stroke-linecap="round"/>
+</svg>

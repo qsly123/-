@@ -1,0 +1,1 @@
+ALTER TABLE "players" ADD COLUMN "breakthrough_bonus_rate" real DEFAULT 0 NOT NULL;

@@ -1,0 +1,1 @@
+ALTER TABLE "random_events" ADD COLUMN "icon_image_url" text;
