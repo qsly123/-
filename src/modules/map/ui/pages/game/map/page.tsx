@@ -55,6 +55,7 @@ import type { PartySnapshot } from "@/modules/social/domain/party-types";
 import { useSocialRoomPresence } from "@/modules/social/ui/hooks/useSocialRoomPresence";
 import { openJsonEventStream } from "@/modules/shared/services/realtime-channel";
 import { createActionRequestMeta } from "@/modules/shared/services/action-request";
+import { claimOpportunityAtPosition, hasOpportunityAtPosition } from "@/modules/map/services/opportunity-claim-client";
 import { MAP_TYPE_NAMES, MONSTER_TYPE_NAMES } from "@/modules/shared/constants";
 import type { MapEncounterSessionView, MapEncounterStageView } from "@/types/game";
 
@@ -2039,6 +2040,16 @@ const MapSceneHeader = memo(function MapSceneHeader({
           font-size: 10px;
           letter-spacing: 0.18em;
           text-transform: uppercase;
+          /* 防止容器被挤窄后 CJK 逐字换行（线上出现过「蓬莱岛」一字一行的竖排） */
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .map-topbar__name {
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
 
         .map-topbar__meta {
@@ -3812,6 +3823,14 @@ export default function MapPage() {
         && entity.x === request.from.x
         && entity.y === request.from.y
       )) || null;
+      if (hasOpportunityAtPosition(sceneData?.opportunities ?? [], request.from)
+        || targetEntity?.kind === "opportunity" || targetEntity?.kind === "limited_opportunity") {
+        const claim = await claimOpportunityAtPosition({ mapId: sceneData?.map.id ?? "",
+          ...request.from, clientSequence: request.clientSequence, clientSceneTick: connection?.serverTick || 0 });
+        return { success: true, status: 200, data: { newX: request.from.x, newY: request.from.y,
+          acceptedClientSequence: request.clientSequence, serverSceneTick: connection?.serverTick || 0,
+          authoritativePosition: request.from, ...claim } };
+      }
       if (!targetEntity) {
         return {
           success: true,
@@ -3899,6 +3918,16 @@ export default function MapPage() {
       }
       : request.from;
 
+    const arrivedAtOpportunity = ack.accepted && (
+      hasOpportunityAtPosition(sceneData?.opportunities ?? [], authoritativePosition)
+      || connection?.entities.some((entity) => (entity.kind === "opportunity" || entity.kind === "limited_opportunity")
+        && entity.x === authoritativePosition.x && entity.y === authoritativePosition.y)
+    );
+    const claim = arrivedAtOpportunity
+      ? await claimOpportunityAtPosition({ mapId: sceneData?.map.id ?? "", ...authoritativePosition,
+        clientSequence: ack.acceptedSequence, clientSceneTick: ack.serverTick })
+      : {};
+
     return {
       success: ack.accepted,
       error: ack.accepted ? undefined : (
@@ -3921,11 +3950,12 @@ export default function MapPage() {
         sceneVersion: ack.serverTick,
         serverTimeMs: Date.now(),
         authoritativePosition,
+        ...claim,
         resyncRequired: !ack.accepted && ack.reason === "stale_state",
         resyncReason: ack.reason,
       },
     };
-  }, [buildWorldMapTransportUnavailableResult, waitForWorldMapConnection]);
+  }, [buildWorldMapTransportUnavailableResult, waitForWorldMapConnection, sceneData?.map.id, sceneData?.opportunities]);
 
   const {
     dataRef,

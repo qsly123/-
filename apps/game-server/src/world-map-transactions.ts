@@ -394,60 +394,15 @@ export async function executeMapInteractTransaction(params: {
       targetKind: params.target.kind,
     });
   } else {
-    const mapDb = await loadTransactionDb();
-    const nowIso = new Date().toISOString();
-    const claimed = await mapDb.db.update(mapDb.mapOpportunitySpawns).set({
-      claimedByPlayerId: params.playerId,
-      claimedAt: nowIso,
-      updatedAt: nowIso,
-    }).where(and(
-      eq(mapDb.mapOpportunitySpawns.id, entityRef.id),
-      eq(mapDb.mapOpportunitySpawns.mapId, params.mapId),
-      isNull(mapDb.mapOpportunitySpawns.claimedAt),
-      gt(mapDb.mapOpportunitySpawns.expiresAt, nowIso),
-    )).returning({
-      id: mapDb.mapOpportunitySpawns.id,
-      eventId: mapDb.mapOpportunitySpawns.eventId,
-    }).get();
-
-    if (claimed?.id) {
-      result = {
-        accepted: true,
-        authoritativeState: {
-          x: params.actor.x,
-          y: params.actor.y,
-          entityId: params.target.id,
-          eventId: claimed.eventId,
-          claimed: true,
-        },
-      };
-    } else {
-      const alreadyClaimedBySelf = await mapDb.db.select({
-        id: mapDb.mapOpportunitySpawns.id,
-        eventId: mapDb.mapOpportunitySpawns.eventId,
-      }).from(mapDb.mapOpportunitySpawns).where(and(
-        eq(mapDb.mapOpportunitySpawns.id, entityRef.id),
-        eq(mapDb.mapOpportunitySpawns.claimedByPlayerId, params.playerId),
-      )).get();
-
-      result = alreadyClaimedBySelf?.id
-        ? {
-          accepted: true,
-          authoritativeState: {
-            x: params.actor.x,
-            y: params.actor.y,
-            entityId: params.target.id,
-            eventId: alreadyClaimedBySelf.eventId,
-            claimed: true,
-            alreadyProcessed: true,
-          },
-        }
-        : createRejectedResult("target_missing", {
-          x: params.actor.x,
-          y: params.actor.y,
-          entityId: params.target.id,
-        });
-    }
+    // 机缘的奖励与AI上下文由Next侧核心服务统一结算。
+    // 房间不能提前写claimedAt，否则后续领取入口找不到未领取的spawn。
+    result = {
+      accepted: true,
+      authoritativeState: {
+        x: params.actor.x, y: params.actor.y, entityId: params.target.id,
+        claimed: false, requiresOpportunityClaim: true,
+      },
+    };
   }
 
   rememberTransactionResult(idempotencyKey, result);
