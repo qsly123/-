@@ -19,7 +19,7 @@ import { sql } from "drizzle-orm";
 import { db } from "@/db";
 import { maps, mapEdges, monsters, items } from "@/db/schema";
 import type { ItemEffect } from "@/types/game";
-import { computeStageMult } from "@/modules/character/services/equipment-instance-service";
+import { RARITY_SEED_MULT, computeStageMult } from "@/modules/character/services/equipment-instance-service";
 
 /* ------------------------------------------------------------------ */
 /* 数值曲线                                                             */
@@ -163,6 +163,19 @@ const TARGET_ROUNDS = {
 const ANCHOR_RARITY = { normal: "rare", elite: "epic", boss: "legendary" } as const;
 
 /**
+ * 真实管线修正系数（2026-10-19 实测，scripts/164-real-pipeline-balance.ts）。
+ * 解析模型漏了真实属性聚合里的系统加成（其他 provider 给的 atk 约 +20%、
+ * 神伤 13.4%、高气运在高气运roll下必暴击），真实玩家比模型强约 2 倍：
+ *   实测化神 epic 一套（精炼0）打 25 级怪：普通 2.0 回合(目标4)、精英 5.5(目标10)、
+ *   玩家撑 25.7 回合(normal，目标40)/13.4(elite，目标24)。
+ * hp 系数 = 目标击杀回合 / 实测击杀回合（怪血偏低，×2.0/1.82）；
+ * attack 系数 = 实测存活回合 / 目标存活回合（怪打得太疼，÷1.56/1.79）。
+ * boss 无 25 级样本，沿用 elite 系数。
+ */
+const REAL_PIPELINE_HP_FACTOR = { normal: 2.0, elite: 1.82, boss: 1.82 } as const;
+const REAL_PIPELINE_ATK_FACTOR = { normal: 0.64, elite: 0.56, boss: 0.56 } as const;
+
+/**
  * monsters 的 hp/attack/defense 等列是 integer（int32，上限 2147483647）。
  * stage_mult = 1.4^(境界-1) 是指数增长，而「怪要打穿玩家防御所需的攻击」≈ 玩家血量×玩家防御，
  * 即 1.4^境界 的平方 —— 约 36 级起就会捅破 int32，这里必须截断。
@@ -256,11 +269,11 @@ function buildStats(level: number, type: keyof typeof TYPE_MULT) {
     defense,
     p.pen - block * 0.45,
   );
-  const hp = clampInt32(dps * target.toKill);
+  const hp = clampInt32(dps * target.toKill * REAL_PIPELINE_HP_FACTOR[type]);
 
   // 怪打玩家（玩家本段装备无格挡，penEff 即破防本身）
   const playerMit = 100 / (100 + effectiveDefense(p.def, armorPenetration));
-  const attack = clampInt32(p.hp / target.toDie / playerMit / MONSTER_SKILL_MUL);
+  const attack = clampInt32(p.hp / target.toDie / playerMit / MONSTER_SKILL_MUL * REAL_PIPELINE_ATK_FACTOR[type]);
 
   return {
     hp,
@@ -608,6 +621,47 @@ async function upsertGearAndPills() {
         },
       }).run();
       createdGear += 1;
+
+      if (isConsumable) continue;
+
+      // 品级变体（方案A，2026-10-20）：打造掷品级需要同段同部位存在各品级物品。
+      // effects 按 RARITY_SEED_MULT 比例缩放——computeStageMult 反解时按同表除回，
+      // 最终生效值 = 基数 × POWER(境界) × RARITY_EFFECTIVE_MULT，与主线装备完全同构。
+      const rarityLabels: Record<string, string> = {
+        common: "凡品", uncommon: "良品", rare: "上品", epic: "极品", legendary: "仙品", hongmeng: "鸿蒙",
+      };
+      for (const rarity of ["common", "uncommon", "rare", "legendary", "hongmeng"] as const) {
+        const ratio = RARITY_SEED_MULT[rarity] / RARITY_SEED_MULT.epic;
+        const variantEffects = gear.effects.map((effect) => ({
+          ...effect,
+          value: Math.max(1, Math.round(effect.value * ratio)),
+        }));
+        const variantId = `${gear.id}_${rarity}`;
+        await db.insert(items).values({
+          id: variantId,
+          name: `${gear.name}·${rarityLabels[rarity]}`,
+          description: gear.description,
+          itemType: gear.itemType,
+          rarity,
+          minRealm: band.levels[0],
+          maxRealm: band.levels[3],
+          stackable: false,
+          isBound: false,
+          price: Math.max(1, Math.round(gear.price * ratio)),
+          effects: variantEffects,
+        }).onConflictDoUpdate({
+          target: items.id,
+          set: {
+            name: `${gear.name}·${rarityLabels[rarity]}`,
+            itemType: gear.itemType,
+            minRealm: band.levels[0],
+            maxRealm: band.levels[3],
+            price: Math.max(1, Math.round(gear.price * ratio)),
+            effects: variantEffects,
+          },
+        }).run();
+        createdGear += 1;
+      }
     }
   }
 }
@@ -653,7 +707,9 @@ async function upsertRecipes() {
           ${mat(recipe.aux)},${matName(recipe.aux)},${recipe.auxQty},0,
           true,${bandIndex * 10 + slotIndex},NOW()::text,NOW()::text
         )
-        ON CONFLICT DO NOTHING
+        -- 必须写冲突目标：recipe_code 无唯一约束时裸 DO NOTHING 永远不生效，
+        -- seed 脚本每跑一次就把全部配方再插一遍（线上曾积到 5 份）
+        ON CONFLICT ("recipe_code") DO NOTHING
       `);
       createdRecipes += 1;
     }
@@ -682,7 +738,7 @@ async function upsertRecipes() {
           ${mat(recipe.aux)},${matName(recipe.aux)},${recipe.auxQty},0,
           true,${bandIndex * 10 + pillIndex},NOW()::text,NOW()::text
         )
-        ON CONFLICT DO NOTHING
+        ON CONFLICT ("recipe_code") DO NOTHING
       `);
       createdRecipes += 1;
     }
@@ -925,4 +981,4 @@ async function main() {
   console.log(`\n怪物总数：${total?.count ?? 0}`);
 }
 
-await main();
+main().then(() => process.exit(0)).catch((error) => { console.error("ERR:", String(error)); process.exit(1); });

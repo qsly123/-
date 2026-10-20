@@ -37,3 +37,7 @@ bun test src/modules/character/services/player-stats.mock.test.ts src/modules/ch
 集成测试文件使用Bun模块mock，建议按上面的限定文件命令单独运行，避免影响其他数据库集成测试。测试结束恢复Math.random；本轮未写入线上数据。
 
 本次仅新增测试和报告，玩法代码保持上一批结果。高段怪物攻击截断、基础包修为为0及装备独立实例问题仍待下一批处理。
+
+类型检查：`bun x tsc --noEmit --incremental false --pretty false` 通过。
+
+全量 `bun run lint`：仍因已有 `MissingMaterialModal.tsx:104` 的 `react-hooks/set-state-in-effect` 错误失败，另有6条已有警告；新增mock测试未报错。

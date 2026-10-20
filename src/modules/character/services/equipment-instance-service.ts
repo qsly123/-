@@ -1,7 +1,7 @@
 /**
- * 装备实例：阶段系数 + 专精词条 + 炼器专精。
+ * 装备实例：阶段系数 + 专精词条。
  *
- * 三件事，都挂在**实例**（player_inventory 行）上，items 表不动：
+ * 两件事，都挂在**实例**（player_inventory 行）上，items 表不动：
  *
  * 1. **阶段系数**（stage_mult）
  *    装备的基础值在 items.effects 里是写死的（按大境界段 × 品质倍率生成的），
@@ -13,9 +13,10 @@
  *    词条**全池可出**（不按流派切分，否则装备绑死流派、交易所没法流通），
  *    流派只在 AFFIX_PATH_PREFERENCE 里做加权。
  *
- * 3. **炼器专精**（player_smithing_specializations）
- *    按装备部位分兵刃 / 甲胄 / 法器 / 饰品，打造对应部位涨熟练度，
- *    专精等级提高该部位的打造成功率与「品质跃升」概率。
+ * 历史注记：曾有过第三件事「炼器专精」（player_smithing_specializations，
+ * 打造涨熟练度、提升成功率与品质跃升概率），2026-10-20 按产品决策（方案A）移除——
+ * 打造品级改为概率随机（rollCraftRarityItemId），专精成为不可见的长线肝度，体验差。
+ * 旧表留在库里无引用，无副作用。
  *
  * ## 数值递进为什么长这样
  *
@@ -454,208 +455,117 @@ export async function getPlayerCombatRateBonuses(playerId: string): Promise<{
   };
 }
 
-/* ------------------------------------------------------------------ 炼器专精 */
-
-export const SMITHING_SPEC_NAMES: Record<string, string> = {
-  blade: "兵刃",
-  armor: "甲胄",
-  artifact: "法器",
-  trinket: "饰品",
-};
-
-/** 满级上限与每级收益。 */
-export const SMITHING_SPEC_MAX_LEVEL = 10;
-const SMITHING_SPEC_EXP_PER_LEVEL = 100;
-const SUCCESS_RATE_PER_LEVEL = 0.015;
-const RARITY_UP_PER_LEVEL = 0.01;
-
-export function smithingSpecKeyForItemType(itemType: string): string {
-  if (itemType === "weapon") return "blade";
-  if (itemType === "armor" || itemType === "helmet") return "armor";
-  if (itemType === "artifact") return "artifact";
-  return "trinket";
-}
-
-export interface SmithingSpecView {
-  specKey: string;
-  specName: string;
-  level: number;
-  exp: number;
-  expToNext: number;
-  /** 打造该部位时额外加的成功率。 */
-  successBonusRate: number;
-  /** 打造该部位时品质跃升一档的概率。 */
-  rarityUpRate: number;
-}
-
-export async function getPlayerSmithingSpecs(playerId: string): Promise<SmithingSpecView[]> {
-  await ensureEquipmentInstanceSchema();
-  const rows = await db
-    .select()
-    .from(playerSmithingSpecializations)
-    .where(eq(playerSmithingSpecializations.playerId, playerId))
-    .all();
-
-  const map = new Map(rows.map((row) => [row.specKey, row]));
-  return Object.keys(SMITHING_SPEC_NAMES).map((specKey) => {
-    const row = map.get(specKey);
-    const exp = Number(row?.exp || 0);
-    const level = Math.min(
-      SMITHING_SPEC_MAX_LEVEL,
-      Math.max(1, 1 + Math.floor(exp / SMITHING_SPEC_EXP_PER_LEVEL)),
-    );
-    return {
-      specKey,
-      specName: SMITHING_SPEC_NAMES[specKey],
-      level,
-      exp,
-      expToNext: level >= SMITHING_SPEC_MAX_LEVEL ? 0 : SMITHING_SPEC_EXP_PER_LEVEL - (exp % SMITHING_SPEC_EXP_PER_LEVEL),
-      successBonusRate: Math.round(level * SUCCESS_RATE_PER_LEVEL * 10000) / 10000,
-      rarityUpRate: Math.round(level * RARITY_UP_PER_LEVEL * 10000) / 10000,
-    };
-  });
-}
-
-export async function getSmithingSpecBonus(params: {
-  playerId: string;
-  specKey: string;
-}): Promise<{ successBonusRate: number; rarityUpRate: number }> {
-  const specs = await getPlayerSmithingSpecs(params.playerId);
-  const spec = specs.find((entry) => entry.specKey === params.specKey);
-  return {
-    successBonusRate: spec?.successBonusRate ?? 0,
-    rarityUpRate: spec?.rarityUpRate ?? 0,
-  };
-}
-
-/** 打造成功后涨熟练度：品级越高经验越多。 */
-export async function grantSmithingSpecExp(params: {
-  playerId: string;
-  specKey: string;
-  rarity: string;
-}): Promise<void> {
-  await ensureEquipmentInstanceSchema();
-  const gain = 10 + Math.max(0, RARITY_ORDER.indexOf(params.rarity as typeof RARITY_ORDER[number])) * 6;
-
-  await db.execute(sql`
-    INSERT INTO "player_smithing_specializations" ("player_id", "spec_key", "level", "exp", "created_at", "updated_at")
-    VALUES (${params.playerId}, ${params.specKey}, 1, ${gain}, NOW()::text, NOW()::text)
-    ON CONFLICT ("player_id", "spec_key")
-    DO UPDATE SET "exp" = "player_smithing_specializations"."exp" + ${gain}, "updated_at" = NOW()::text
-  `);
-}
-
 /**
- * 品质跃升：找同部位同段、高一个品级的替代装备。
- * 找不到就返回 null（说明这件已经是该段该部位的最高品级）。
- */
-export async function findUpgradedItem(params: {
-  itemId: string;
-}): Promise<string | null> {
-  const item = await db
-    .select({
-      itemType: items.itemType,
-      rarity: items.rarity,
-      minRealm: items.minRealm,
-    })
-    .from(items)
-    .where(eq(items.id, params.itemId))
-    .get();
-  if (!item) {
-    return null;
-  }
-
-  const index = RARITY_ORDER.indexOf(item.rarity as typeof RARITY_ORDER[number]);
-  if (index < 0 || index >= RARITY_ORDER.length - 1) {
-    return null;
-  }
-  const nextRarity = RARITY_ORDER[index + 1];
-
-  const candidate = await db
-    .select({ id: items.id })
-    .from(items)
-    .where(and(
-      eq(items.itemType, item.itemType),
-      eq(items.rarity, nextRarity),
-      eq(items.minRealm, item.minRealm ?? 1),
-    ))
-    .limit(1)
-    .get();
-
-  return candidate?.id ?? null;
-}
-
-/**
- * 跃升到**鸿蒙**时的概率折扣：把专精的跃升概率（每级 1%，满级 10%）
- * 再乘这个系数。鸿蒙是装备天花板，得真的稀有。
+ * 打造品级权重（方案A，2026-10-20）：以配方产物自身品级为基准档，只升不降。
  *
- * ×0.2 → 满级专精也只有 2%。想更狠就往下调：
- *   0.1 → 满级 1%（约 120 次打造一件）  0.2 → 2%（约 60 次）  0.5 → 5%（约 24 次）
+ * - 步进权重（相对基准档 +0/+1/+2/+3 档）：55% / 25% / 12% / 8%；
+ *   步进**最高只到仙品**——超出可达档位的份额回落到基准档。
+ * - 鸿蒙（装备天花板）不吃步进权重，走独立绝对概率 CRAFT_HONGMENG_CHANCE。
+ *   否则以仙品为基准的配方会把 +1~+5 的权重全部坍缩到鸿蒙（45% 出货，天花板报废）。
+ *
+ * 各基准档的实际分布：
+ *   凡品基准: 凡55/良25/上12/极8/仙0(无货则回退)/鸿0.5%
+ *   极品基准: 极75/仙25/鸿0.5%
+ *   仙品基准: 仙99.5/鸿0.5%   ← 约 200 次打造一件鸿蒙
  */
-export const HONGMENG_UPGRADE_CHANCE_MULT = 0.2;
+export const CRAFT_RARITY_STEP_WEIGHTS = [0.55, 0.25, 0.12, 0.08] as const;
+export const CRAFT_HONGMENG_CHANCE = 0.005;
 
 /**
- * 掷一次品质跃升，返回实际发放的 itemId（没跃升就返回原 id）。
+ * 打造时掷品级，返回实际发放的 itemId。
  *
- * 把概率判断也收在这里，是为了让「跃升到鸿蒙更难」只有一处实现——
- * 调用方只管把自己的 rarityUpRate 传进来。
+ * 替换原「炼器专精品质跃升」机制（专精已按产品决策移除，见
+ * docs/current/content-expansion-plan.md 方案A）。目标品级找不到对应物品时
+ * 逐档向下回退，保证总能落到一个真实存在的装备。
  */
-export async function rollUpgradedItemId(params: {
+export async function rollCraftRarityItemId(params: {
+  /** 配方产物的物品 id（其品级即基准档） */
   itemId: string;
-  rarityUpRate: number;
 }): Promise<string> {
-  const rate = Number(params.rarityUpRate) || 0;
-  if (rate <= 0) {
-    return params.itemId;
-  }
-
-  const current = await db
-    .select({ rarity: items.rarity })
+  const base = await db
+    .select({ itemType: items.itemType, rarity: items.rarity, minRealm: items.minRealm })
     .from(items)
     .where(eq(items.id, params.itemId))
     .get();
-  if (!current) {
+  if (!base) {
+    return params.itemId;
+  }
+  const baseIndex = RARITY_ORDER.indexOf(base.rarity as typeof RARITY_ORDER[number]);
+  if (baseIndex < 0) {
     return params.itemId;
   }
 
-  const index = RARITY_ORDER.indexOf(current.rarity as typeof RARITY_ORDER[number]);
-  if (index < 0 || index >= RARITY_ORDER.length - 1) {
-    return params.itemId; // 已是最高品级
+  const topIndex = RARITY_ORDER.length - 1; // hongmeng
+  const stepCeiling = baseIndex < topIndex ? topIndex - 1 : baseIndex; // 步进最高到仙品
+  const maxStep = stepCeiling - baseIndex;
+
+  // 基准档质量 = 自身权重 + 所有不可达档位回落
+  let baseMass = CRAFT_RARITY_STEP_WEIGHTS[0];
+  for (let k = maxStep + 1; k < CRAFT_RARITY_STEP_WEIGHTS.length; k += 1) {
+    baseMass += CRAFT_RARITY_STEP_WEIGHTS[k];
   }
 
-  const nextRarity = RARITY_ORDER[index + 1];
-  const chance = nextRarity === "hongmeng" ? rate * HONGMENG_UPGRADE_CHANCE_MULT : rate;
-  if (Math.random() >= chance) {
-    return params.itemId;
+  let targetIndex = baseIndex;
+  const hongmengRoll = Math.random();
+  if (baseIndex < topIndex && hongmengRoll < CRAFT_HONGMENG_CHANCE) {
+    targetIndex = topIndex;
+  } else {
+    // 先判「落在基准档」：漏掉这一步的话，最后一个可达档位的累积概率必然到 1，
+    // roll < 1 恒成立 → 每次打造都直接跳到最高可达档（线上实测 10 次出 8 件仙品）。
+    const roll = Math.random();
+    if (roll >= baseMass) {
+      let cumulative = baseMass;
+      for (let step = 1; step <= maxStep; step += 1) {
+        cumulative += CRAFT_RARITY_STEP_WEIGHTS[step];
+        if (roll < cumulative) {
+          targetIndex = baseIndex + step;
+          break;
+        }
+      }
+    }
   }
 
-  const upgraded = await findUpgradedItem({ itemId: params.itemId });
-  return upgraded ?? params.itemId;
+  const minRealm = base.minRealm ?? 1;
+  while (targetIndex >= 0) {
+    const rarity = RARITY_ORDER[targetIndex];
+    const candidate = await db
+      .select({ id: items.id })
+      .from(items)
+      .where(and(
+        eq(items.itemType, base.itemType),
+        eq(items.rarity, rarity),
+        eq(items.minRealm, minRealm),
+      ))
+      .limit(1)
+      .get();
+    if (candidate) {
+      return candidate.id;
+    }
+    targetIndex -= 1; // 该段没有这个品级的装备，向下一档找
+  }
+  return params.itemId;
 }
 
 /* ------------------------------------------------------------------ 建表 */
 
 let ensurePromise: Promise<void> | null = null;
 
-/** 运行时补齐实例相关列与专精表（老库没有）。 */
+/**
+ * 运行时补齐实例相关列与专精表（老库没有）。
+ *
+ * 必须整体包在事务里并设 lock_timeout：ALTER player_inventory 需要 ACCESS EXCLUSIVE，
+ * 若恰好有并发事务（如炼制扣材料）持有该表的行锁，ALTER 会无限等待，
+ * 且锁队列是公平的——后续所有 inventory 查询都排在它后面，全站装备接口一起挂
+ * （线上 2026-10-20 00:14 事故）。lock_timeout 让它 2 秒拿不到锁就快速失败，
+ * ensurePromise 随之重置，下次调用重试，最坏只影响单次请求。
+ */
 export async function ensureEquipmentInstanceSchema(): Promise<void> {
   if (!ensurePromise) {
-    ensurePromise = (async () => {
-      await db.execute(sql.raw(`ALTER TABLE "player_inventory" ADD COLUMN IF NOT EXISTS "stage_mult" real NOT NULL DEFAULT 1`));
-      await db.execute(sql.raw(`ALTER TABLE "player_inventory" ADD COLUMN IF NOT EXISTS "stage_realm" integer`));
-      await db.execute(sql.raw(`
-        CREATE TABLE IF NOT EXISTS "player_smithing_specializations" (
-          "id" integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-          "player_id" text NOT NULL REFERENCES "players"("id"),
-          "spec_key" text NOT NULL,
-          "level" integer NOT NULL DEFAULT 1,
-          "exp" integer NOT NULL DEFAULT 0,
-          "created_at" text NOT NULL DEFAULT NOW()::text,
-          "updated_at" text NOT NULL DEFAULT NOW()::text
-        )
-      `));
-      await db.execute(sql.raw(`CREATE UNIQUE INDEX IF NOT EXISTS "player_smithing_specs_unique_idx" ON "player_smithing_specializations" ("player_id", "spec_key")`));
-    })().catch((error) => {
+    ensurePromise = db.transaction(async (tx) => {
+      await tx.execute(sql.raw(`SET LOCAL lock_timeout = '2s'`));
+      await tx.execute(sql.raw(`ALTER TABLE "player_inventory" ADD COLUMN IF NOT EXISTS "stage_mult" real NOT NULL DEFAULT 1`));
+      await tx.execute(sql.raw(`ALTER TABLE "player_inventory" ADD COLUMN IF NOT EXISTS "stage_realm" integer`));
+    }).catch((error) => {
       ensurePromise = null;
       throw error;
     });

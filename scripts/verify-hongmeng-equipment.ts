@@ -11,11 +11,10 @@ import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { items } from "@/db/schema";
 import {
-  HONGMENG_UPGRADE_CHANCE_MULT,
+  CRAFT_HONGMENG_CHANCE,
   RARITY_EFFECTIVE_MULT,
   computeStageMult,
-  findUpgradedItem,
-  rollUpgradedItemId,
+  rollCraftRarityItemId,
 } from "@/modules/character/services/equipment-instance-service";
 
 const EQUIPMENT_TYPES = ["weapon", "armor", "helmet", "shoes", "artifact"];
@@ -62,11 +61,13 @@ async function main() {
 
   step("鸿蒙装备已补齐", hongmeng.length > 0, `${hongmeng.length} 件（仙品 ${legendary.length} 件）`);
 
-  /* 每件仙品都要能跃升到鸿蒙，否则那条链路还是断的 */
+  /* 每件仙品都要有同段同部位的鸿蒙目标（方案A 的品级掷骰依赖这些目标物品） */
   const broken: string[] = [];
   for (const item of legendary) {
-    const upgraded = await findUpgradedItem({ itemId: item.id });
-    if (!upgraded) {
+    const target = rows.find((row) => row.rarity === "hongmeng"
+      && row.itemType === item.itemType
+      && (row.minRealm ?? 1) === (item.minRealm ?? 1));
+    if (!target) {
       broken.push(item.name);
     }
   }
@@ -76,8 +77,10 @@ async function main() {
   /* 数值：鸿蒙 = 仙品 × (1.55 / 1.4)，差值来自生效品质倍率 */
   if (legendary.length > 0 && hongmeng.length > 0) {
     const sample = legendary.find((row) => row.itemType === "weapon") || legendary[0];
-    const target = await findUpgradedItem({ itemId: sample.id });
-    const targetRow = rows.find((row) => row.id === target);
+    const target = rows.find((row) => row.rarity === "hongmeng"
+      && row.itemType === sample.itemType
+      && (row.minRealm ?? 1) === (sample.minRealm ?? 1));
+    const targetRow = target ?? null;
     if (targetRow) {
       const realm = Number(sample.minRealm ?? 1);
       const legendValue = finalValue(sample, realm);
@@ -89,66 +92,22 @@ async function main() {
     }
   }
 
-  /* 跃升概率实测：满级专精 10%，跃升到鸿蒙要打折 */
-  const targets = legendary;
+  /* 概率随机出品级（方案A）实测：仙品基准 ≈ 99.5% 留在仙品、0.5% 落鸿蒙 */
+  const sample = legendary.find((row) => row.itemType === "weapon") || legendary[0];
   const SAMPLES = 4000;
-
-  if (targets.length > 0) {
-    let hits = 0;
+  if (sample) {
+    const counts = new Map<string, number>();
     for (let i = 0; i < SAMPLES; i += 1) {
-      const picked = targets[i % targets.length];
-      const result = await rollUpgradedItemId({ itemId: picked.id, rarityUpRate: 0.1 });
-      if (result !== picked.id) {
-        hits += 1;
-      }
+      const picked = await rollCraftRarityItemId({ itemId: sample.id });
+      const row = rows.find((r) => r.id === picked);
+      counts.set(row?.rarity ?? picked, (counts.get(row?.rarity ?? picked) ?? 0) + 1);
     }
-    const hitRate = hits / SAMPLES;
-    const expected = 0.1 * HONGMENG_UPGRADE_CHANCE_MULT;
-    step("跃升到鸿蒙的概率 = 专精概率 × 折扣", Math.abs(hitRate - expected) < expected * 0.4,
-      `实测 ${(hitRate * 100).toFixed(2)}%（期望 ${(expected * 100).toFixed(1)}%，${SAMPLES} 次）`);
-  }
-
-  /* 对照组：极品→仙品不该被打折。
-     注意只有「同段存在仙品」的极品才跃升得动——仙品全在元婴段，练气~结丹的极品其实是断的。 */
-  let controlItem: (typeof rows)[number] | null = null;
-  let upgradableEpic = 0;
-  for (const row of rows) {
-    if (row.rarity !== "epic") {
-      continue;
-    }
-    if (await findUpgradedItem({ itemId: row.id })) {
-      upgradableEpic += 1;
-      if (!controlItem && row.itemType === "weapon") {
-        controlItem = row;
-      }
-    }
-  }
-  const epicTotal = rows.filter((row) => row.rarity === "epic").length;
-  console.log(`\n（背景）极品装备 ${epicTotal} 件，其中 ${upgradableEpic} 件能跃升到仙品——只有同段存在仙品才跃升得动`);
-
-  if (controlItem) {
-    let hits = 0;
-    for (let i = 0; i < SAMPLES; i += 1) {
-      const result = await rollUpgradedItemId({ itemId: controlItem.id, rarityUpRate: 0.1 });
-      if (result !== controlItem.id) {
-        hits += 1;
-      }
-    }
-    const hitRate = hits / SAMPLES;
-    step(`跃升到仙品不打折（对照组：${controlItem.name}）`, Math.abs(hitRate - 0.1) < 0.04,
-      `实测 ${(hitRate * 100).toFixed(2)}%（期望 10%）`);
-  }
-
-  /* 综合出货：打造一件鸿蒙要多少次 */
-  const craftSuccess = Math.min(0.98, 0.685 + 0.15); // 仙品配方平均成功率 + 满级专精加成
-  const perCraft = craftSuccess * 0.1 * HONGMENG_UPGRADE_CHANCE_MULT;
-  console.log(`\n=== 满级专精下打造一件鸿蒙 ===`);
-  console.log(`  单次打造出鸿蒙 ≈ ${(perCraft * 100).toFixed(2)}%  → 平均 ${Math.round(1 / perCraft)} 次打造一件`);
-  console.log(`  （仙品配方成功率 ${(craftSuccess * 100).toFixed(1)}% × 跃升 ${(0.1 * HONGMENG_UPGRADE_CHANCE_MULT * 100).toFixed(1)}%）`);
-  for (const level of [1, 3, 5, 10]) {
-    const rate = level * 0.01 * HONGMENG_UPGRADE_CHANCE_MULT;
-    const success = Math.min(0.98, 0.685 + level * 0.015);
-    console.log(`  专精 ${String(level).padStart(2)} 级：跃升 ${(rate * 100).toFixed(2)}%，平均 ${Math.round(1 / (success * rate))} 次打造一件`);
+    const hongmengRate = (counts.get("hongmeng") ?? 0) / SAMPLES;
+    step("仙品基准：鸿蒙率 ≈ 绝对概率 0.5%", Math.abs(hongmengRate - CRAFT_HONGMENG_CHANCE) < 0.004,
+      `实测 ${(hongmengRate * 100).toFixed(2)}%（期望 ${(CRAFT_HONGMENG_CHANCE * 100).toFixed(1)}%，${SAMPLES} 次，样本：${sample.name}）`);
+    const legendaryRate = (counts.get("legendary") ?? 0) / SAMPLES;
+    step("仙品基准：步进权重不坍缩到鸿蒙", legendaryRate > 0.9,
+      `留在仙品 ${(legendaryRate * 100).toFixed(1)}%`);
   }
 
   console.log(failed === 0 ? "\n全部通过" : `\n${failed} 项未通过`);

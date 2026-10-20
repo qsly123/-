@@ -10,14 +10,11 @@
  */
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { items, playerInventory, playerSmithingSpecializations } from "@/db/schema";
+import { items, playerInventory } from "@/db/schema";
 import {
   computeStageMult,
   ensureEquipmentInstanceSchema,
-  getPlayerSmithingSpecs,
-  grantSmithingSpecExp,
   rollEquipmentAffixes,
-  smithingSpecKeyForItemType,
   tuneEquipmentInstance,
 } from "@/modules/character/services/equipment-instance-service";
 
@@ -150,17 +147,9 @@ async function main() {
   step("流派仍起作用（本流派更常见，但不排他）", selfHits > crossHits * 1.5,
     `本流派 ${selfHits} 次 vs 跨流派 ${crossHits} 次`);
 
-  /* ---------------- 3. 炼器专精 ---------------- */
-  await db.delete(playerSmithingSpecializations).where(eq(playerSmithingSpecializations.playerId, PLAYER_ID)).run();
-  const before = await getPlayerSmithingSpecs(PLAYER_ID);
-  await grantSmithingSpecExp({ playerId: PLAYER_ID, specKey: "blade", rarity: "epic" });
-  await grantSmithingSpecExp({ playerId: PLAYER_ID, specKey: "blade", rarity: "epic" });
-  const after = await getPlayerSmithingSpecs(PLAYER_ID);
-  const bladeBefore = before.find((entry) => entry.specKey === "blade");
-  const bladeAfter = after.find((entry) => entry.specKey === "blade");
-  step("打造涨专精经验", (bladeAfter?.exp ?? 0) > (bladeBefore?.exp ?? 0),
-    `${bladeBefore?.exp ?? 0} → ${bladeAfter?.exp ?? 0}`);
-  step("兵刃专精对应武器部位", smithingSpecKeyForItemType("weapon") === "blade", "weapon → blade");
+  /* ---------------- 3. 炼器专精 ----------------
+   * 专精机制已按方案A移除（2026-10-20），打造品级改为概率随机（rollCraftRarityItemId）。
+   * 本节随之删除。 */
 
   /* ---------------- 4. 实例真的写进去了 ---------------- */
   const owned = await db
@@ -192,7 +181,6 @@ async function main() {
       .run();
   }
 
-  await db.delete(playerSmithingSpecializations).where(eq(playerSmithingSpecializations.playerId, PLAYER_ID)).run();
   console.log("\n已清理测试数据");
 }
 

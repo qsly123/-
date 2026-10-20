@@ -4,10 +4,8 @@ import { getFourRealmsPack } from "@/db/offline-packs/four-realms-pack";
 import { getRealmLabels } from "@/modules/character/services/realm-position";
 import { items, players } from "@/db/schema";
 import {
-  getSmithingSpecBonus,
-  grantSmithingSpecExp,
-  rollUpgradedItemId,
-  smithingSpecKeyForItemType,
+  ensureEquipmentInstanceSchema,
+  rollCraftRarityItemId,
   tuneEquipmentInstance,
 } from "@/modules/character/services/equipment-instance-service";
 import { grantRewardToPlayer } from "@/modules/character/services/reward-service";
@@ -568,13 +566,18 @@ export async function craftSmithingRecipe(params: {
   recipeId: string;
 }) {
   await ensureSmithingCoreSchema();
+  // 必须在事务外执行：ensureEquipmentInstanceSchema 会对 player_inventory 做 ALTER，
+  // 若延迟到事务内（经 getSmithingSpecBonus 触发）会自死锁——事务持行锁等 ALTER、
+  // ALTER 等事务的锁，随后全站 inventory 查询在锁队列里被堵死
+  // （线上 2026-10-20 00:14 事故：炼制/丹药/装备全部无限转圈）。
+  await ensureEquipmentInstanceSchema();
   const recipeId = toText(params.recipeId);
   if (!recipeId) {
     throw new Error("配方 ID 不能为空");
   }
 
   /** 打造成功的产出，留到事务提交后再打磨实例（事务内读不到刚插入的行）。 */
-  const crafted: { itemId?: string; specKey?: string } = {};
+  const crafted: { itemId?: string } = {};
 
   await db.transaction(async (tx) => {
     const rows = await tx.execute<SmithingRecipeRow>(drizzleSql`
@@ -614,20 +617,14 @@ export async function craftSmithingRecipe(params: {
       await consumeIngredient(tx, params.playerId, ingredient);
     }
 
-    // 炼器专精：打造对应部位的成功率加成 + 品质跃升概率
-    const specKey = smithingSpecKeyForItemType(toText(row.result_item_type) || "");
-    const specBonus = await getSmithingSpecBonus({ playerId: params.playerId, specKey });
-
-    const finalSuccessRate = Math.min(0.98, recipe.currentSuccessRate + specBonus.successBonusRate);
+    // 方案A：品级由打造时概率随机决定，无专精加成（2026-10-20 产品决策）
+    const finalSuccessRate = Math.min(0.98, recipe.currentSuccessRate);
     const roll = Math.random();
     const success = roll <= finalSuccessRate;
     if (success) {
-      let grantedItemId = recipe.resultItemId;
-      // 跃升概率由 rollUpgradedItemId 统一裁决（跃升到鸿蒙要额外打折，见 HONGMENG_UPGRADE_CHANCE_MULT）
-      grantedItemId = await rollUpgradedItemId({
-        itemId: grantedItemId,
-        rarityUpRate: specBonus.rarityUpRate,
-      });
+      // 品级在打造时掷出：基准档为主，小概率向上浮动（rollCraftRarityItemId）
+      // 注意：这是纯读查询，放在事务内安全——不再有会 ALTER 的 ensure 调用
+      const grantedItemId = await rollCraftRarityItemId({ itemId: recipe.resultItemId });
       await grantRewardToPlayer({
         tx,
         playerId: params.playerId,
@@ -637,7 +634,6 @@ export async function craftSmithingRecipe(params: {
       });
       // 实例的阶段系数与词条要等事务提交后再写（否则读不到刚插入的行）
       crafted.itemId = grantedItemId;
-      crafted.specKey = specKey;
     }
 
     await tx.execute(drizzleSql`
@@ -671,16 +667,6 @@ export async function craftSmithingRecipe(params: {
       playerId: params.playerId,
       itemId: crafted.itemId,
       playerRealm: Number(player?.realm || 1),
-    });
-    const granted = await db
-      .select({ rarity: items.rarity })
-      .from(items)
-      .where(eq(items.id, crafted.itemId))
-      .get();
-    await grantSmithingSpecExp({
-      playerId: params.playerId,
-      specKey: crafted.specKey || "trinket",
-      rarity: granted?.rarity || "common",
     });
   }
 
