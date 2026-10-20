@@ -15,7 +15,8 @@
 .turn-combat-root {
   box-sizing: border-box;
   min-height: 100dvh;
-  height: var(--app-height, 100dvh);
+  /* 同 game/layout.tsx：--app-height 可能被浏览器报大，必须钳到 100dvh 内 */
+  height: min(var(--app-height, 100dvh), 100dvh);
   padding: max(12px, env(safe-area-inset-top)) 12px max(16px, env(safe-area-inset-bottom));
   color: #f6f7fb;
   background:

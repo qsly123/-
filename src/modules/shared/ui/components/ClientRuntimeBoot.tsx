@@ -11,7 +11,12 @@ function applyRuntimeDocumentState() {
 
   const runtime = getClientRuntimeKind();
   const viewport = window.visualViewport;
-  const viewportHeight = `${Math.round(viewport?.height || window.innerHeight)}px`;
+  // 移动浏览器在自动缩放/旋转的瞬间会把视口高度报得偏大，直接采用会把页面撑长。
+  // 取三者最小值钳制：键盘弹出时 visualViewport.height 变小仍正常生效（min 逻辑保留它）。
+  const rawHeight = Math.round(viewport?.height || window.innerHeight);
+  const innerHeight = Math.round(window.innerHeight || rawHeight);
+  const docHeight = document.documentElement.clientHeight || innerHeight;
+  const viewportHeight = `${Math.max(120, Math.min(rawHeight, innerHeight, docHeight))}px`;
   const viewportWidth = `${Math.round(viewport?.width || window.innerWidth)}px`;
 
   document.documentElement.dataset.runtime = runtime;

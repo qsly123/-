@@ -90,7 +90,9 @@ button {
 }
 
 #__next {
-  min-height: var(--app-height);
+  /* 同 game/layout.tsx：--app-height 可能被浏览器报大，必须钳到 100dvh 内 */
+  min-height: 100vh;
+  min-height: min(var(--app-height, 100dvh), 100dvh);
 }
 
 html[data-runtime="capacitor"] body {

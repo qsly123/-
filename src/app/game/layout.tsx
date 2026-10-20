@@ -838,8 +838,12 @@ function GameLayoutShell({ children }: { children: React.ReactNode }) {
       display: "flex",
       flexDirection: "column",
       width: "100%",
-      height: "var(--app-height, 100dvh)",
-      minHeight: "100dvh",
+      // 必须用 min() 钳住：部分移动浏览器（自动缩放/旋转瞬间）会把 visualViewport.height
+      // 回报得比真实可视区大，--app-height 一旦虚大，整个外壳被撑长，
+      // 出现「内容在上、中间大片黑、底部导航被推到很远」的过长页面（线上视频已复现）。
+      // 100dvh 由浏览器动态维护不可能虚大，键盘弹出时 --app-height 变小仍照常生效。
+      height: "min(var(--app-height, 100dvh), 100dvh)",
+      minHeight: "min(var(--app-height, 100dvh), 100dvh)",
       maxWidth: GAME_PORTRAIT_STAGE_MAX_WIDTH,
       margin: "0 auto",
       background: CULTIVATION_PAGE_BACKGROUND,
